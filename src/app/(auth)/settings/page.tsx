@@ -12,8 +12,11 @@ import { Label } from "@/components/ui/label"
 
 import { toast } from "sonner"
 import { useTheme } from "next-themes"
-import { Sun, Moon, Monitor, Download, Sparkles, User, Shield, PlugIcon, Wallet, Tags, PiggyBank, Bell, KeyRound } from "lucide-react"
+import { Sun, Moon, Monitor, Download, Sparkles, User, Shield, PlugIcon, Wallet, Tags, PiggyBank, Bell, KeyRound, Cloud, Upload, CheckCircle, AlertTriangle } from "lucide-react"
 import { encryptUserSecret, decryptUserSecret, storeSessionKey } from "@/lib/crypto"
+import { getWebDAVConfig, saveWebDAVConfig, testWebDAVConnection, uploadWithRotation, downloadLatestBackup, exportSupabaseData, importSupabaseData } from "@/lib/webdav"
+import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth()
@@ -32,6 +35,17 @@ export default function SettingsPage() {
   const [pwConfirm, setPwConfirm] = useState("")
   const [pwLoading, setPwLoading] = useState(false)
 
+  const [webdavUrl, setWebdavUrl] = useState("")
+  const [webdavUsername, setWebdavUsername] = useState("")
+  const [webdavPassword, setWebdavPassword] = useState("")
+  const [webdavPath, setWebdavPath] = useState("")
+  const [webdavTesting, setWebdavTesting] = useState(false)
+  const [webdavSyncing, setWebdavSyncing] = useState(false)
+  const [webdavRestoring, setWebdavRestoring] = useState(false)
+  const [lastSync, setLastSync] = useState<string | null>(null)
+  const [autoSync, setAutoSync] = useState(false)
+  const webdavIsHttp = webdavUrl.startsWith("http://")
+
   useEffect(() => {
     if (!user) return
     supabase.from("user_settings").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(1).then(async ({ data }: any) => {
@@ -45,7 +59,41 @@ export default function SettingsPage() {
         setCurrency(record.currency || "CNY")
       }
     })
+
+    const wc = getWebDAVConfig()
+    if (wc) {
+      setWebdavUrl(wc.url)
+      setWebdavUsername(wc.username)
+      if (wc.password && user) {
+        decryptUserSecret(user.id, wc.password).then(decrypted => {
+          if (decrypted) setWebdavPassword(decrypted)
+        })
+      }
+      setWebdavPath(wc.path)
+    }
+    setLastSync(localStorage.getItem("expense_tracker__last_sync"))
+    setAutoSync(localStorage.getItem("expense_tracker__auto_sync") === "true")
   }, [user])
+
+  useEffect(() => {
+    localStorage.setItem("expense_tracker__auto_sync", String(autoSync))
+    if (!autoSync) return
+    if (!webdavUrl || !webdavUsername || !webdavPassword) return
+
+    const doSync = async () => {
+      const config = { url: webdavUrl, username: webdavUsername, password: webdavPassword, path: webdavPath }
+      const data = await exportSupabaseData(user!.id)
+      const result = await uploadWithRotation(config, data)
+      if (result.ok) {
+        const nowStr = new Date().toISOString()
+        localStorage.setItem("expense_tracker__last_sync", nowStr)
+        setLastSync(nowStr)
+      }
+    }
+    doSync()
+    const interval = setInterval(doSync, 30 * 60 * 1000)
+    return () => clearInterval(interval)
+  }, [autoSync, webdavUrl, webdavUsername, webdavPassword, webdavPath, user])
 
   const handleSaveAi = async () => {
     setLoading(true)
@@ -133,6 +181,80 @@ export default function SettingsPage() {
     setPwLoading(false)
   }
 
+  const handleSaveWebDAV = async () => {
+    const encryptedPw = webdavPassword ? await encryptUserSecret(user!.id, webdavPassword) : ""
+    saveWebDAVConfig({ url: webdavUrl, username: webdavUsername, password: encryptedPw, path: webdavPath })
+    toast.success("WebDAV 配置已保存")
+  }
+
+  function isInsecureHttp(url: string): boolean {
+    return url.startsWith("http://") && !url.includes("localhost") && !url.includes("127.0.0.1")
+  }
+
+  const handleTestWebDAV = async () => {
+    if (isInsecureHttp(webdavUrl)) {
+      toast.error("WebDAV 地址请使用 HTTPS 加密连接")
+      return
+    }
+    setWebdavTesting(true)
+    const result = await testWebDAVConnection({ url: webdavUrl, username: webdavUsername, password: webdavPassword, path: webdavPath })
+    if (result.ok) {
+      toast.success("WebDAV 连接成功")
+    } else {
+      toast.error("连接失败：" + (result.error || "未知错误"))
+    }
+    setWebdavTesting(false)
+  }
+
+  const handleSyncUpload = async () => {
+    if (!webdavUrl || !webdavUsername || !webdavPassword) {
+      toast.error("请先填写 WebDAV 配置")
+      return
+    }
+    if (isInsecureHttp(webdavUrl)) {
+      toast.error("WebDAV 地址请使用 HTTPS 加密连接")
+      return
+    }
+    setWebdavSyncing(true)
+    const config = { url: webdavUrl, username: webdavUsername, password: webdavPassword, path: webdavPath }
+    const data = await exportSupabaseData(user!.id)
+    const result = await uploadWithRotation(config, data)
+    if (result.ok) {
+      const nowStr = new Date().toISOString()
+      localStorage.setItem("expense_tracker__last_sync", nowStr)
+      setLastSync(nowStr)
+      toast.success("数据已同步到 WebDAV")
+    } else {
+      toast.error("同步失败：" + (result.error || "未知错误"))
+    }
+    setWebdavSyncing(false)
+  }
+
+  const handleSyncDownload = async () => {
+    if (!webdavUrl || !webdavUsername || !webdavPassword) {
+      toast.error("请先填写 WebDAV 配置")
+      return
+    }
+    if (isInsecureHttp(webdavUrl)) {
+      toast.error("WebDAV 地址请使用 HTTPS 加密连接")
+      return
+    }
+    setWebdavRestoring(true)
+    const config = { url: webdavUrl, username: webdavUsername, password: webdavPassword, path: webdavPath }
+    const result = await downloadLatestBackup(config)
+    if (result.ok && result.data) {
+      const importResult = await importSupabaseData(user!.id, result.data)
+      if (importResult.ok) {
+        toast.success("数据已从 WebDAV 恢复")
+      } else {
+        toast.error(importResult.error || "数据恢复失败")
+      }
+    } else {
+      toast.error("下载失败：" + (result.error || "未知错误"))
+    }
+    setWebdavRestoring(false)
+  }
+
   const handleExport = async () => {
     if (!user) return
     const { data: txData } = await supabase
@@ -165,20 +287,23 @@ export default function SettingsPage() {
       <h1 className="text-2xl font-bold">设置</h1>
 
       <Card>
-        <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+        <CardContent className="p-2">
           {[
             { href: "/accounts", label: "账户", icon: Wallet, desc: "管理资金账户" },
             { href: "/categories", label: "分类", icon: Tags, desc: "管理收支分类" },
             { href: "/budgets", label: "预算", icon: PiggyBank, desc: "设定消费预算" },
             { href: "/bills", label: "提醒", icon: Bell, desc: "管理账单提醒" },
-          ].map(item => (
+          ].map((item, i) => (
             <Link key={item.href} href={item.href}>
-              <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-accent transition-colors cursor-pointer">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <item.icon className="w-5 h-5 text-primary" />
+              <div className={`flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors ${i > 0 ? "" : ""}`}>
+                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <item.icon className="w-4.5 h-4.5 text-primary" />
                 </div>
-                <span className="text-sm font-medium">{item.label}</span>
-                <span className="text-[10px] text-muted-foreground text-center leading-tight">{item.desc}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{item.label}</p>
+                  <p className="text-xs text-muted-foreground truncate">{item.desc}</p>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground shrink-0"><polyline points="9 18 15 12 9 6"/></svg>
               </div>
             </Link>
           ))}
@@ -283,6 +408,73 @@ export default function SettingsPage() {
           <Button variant="outline" onClick={handleExport}>
             <Download className="w-4 h-4 mr-1" /> 导出 CSV
           </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Cloud className="w-5 h-5 text-muted-foreground" />
+            <CardTitle className="text-base">WebDAV 同步</CardTitle>
+            <CardDescription className="ml-2">通过 WebDAV 备份和恢复数据</CardDescription>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>WebDAV 地址</Label>
+            <Input value={webdavUrl} onChange={e => setWebdavUrl(e.target.value)}
+              placeholder="https://example.com/remote.php/dav/files/username" />
+            {webdavIsHttp && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <AlertTriangle className="w-3 h-3" />当前使用 HTTP，密码将以明文传输，建议改用 HTTPS
+              </p>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label>用户名</Label>
+              <Input value={webdavUsername} onChange={e => setWebdavUsername(e.target.value)}
+                placeholder="username" />
+            </div>
+            <div className="space-y-2">
+              <Label>密码</Label>
+              <Input type="password" value={webdavPassword} onChange={e => setWebdavPassword(e.target.value)}
+                placeholder="password" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>远程路径 (可选)</Label>
+            <Input value={webdavPath} onChange={e => setWebdavPath(e.target.value)}
+              placeholder="apps/账小记" />
+            <p className="text-xs text-muted-foreground">文件将保存到此路径下，留空使用根目录</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={handleSaveWebDAV}>保存配置</Button>
+            <Button variant="outline" size="sm" onClick={handleTestWebDAV} disabled={webdavTesting || !webdavUrl}>
+              {webdavTesting ? "测试中..." : <><PlugIcon className="w-4 h-4 mr-1" />测试连接</>}
+            </Button>
+          </div>
+          <Separator />
+          <div className="flex items-center justify-between">
+            <Label className="text-sm">自动同步</Label>
+            <Switch checked={autoSync} onCheckedChange={setAutoSync} disabled={!webdavUrl || !webdavUsername || !webdavPassword} />
+          </div>
+          <p className="text-xs text-muted-foreground -mt-2">开启后每 30 分钟自动备份数据到 WebDAV</p>
+          <Separator />
+          <div className="flex flex-wrap gap-2">
+            <Button onClick={handleSyncUpload} disabled={webdavSyncing || !webdavUrl}>
+              {webdavSyncing ? <>同步中...</> : <><Upload className="w-4 h-4 mr-1" />上传同步</>}
+            </Button>
+            <Button variant="secondary" onClick={handleSyncDownload} disabled={webdavRestoring || !webdavUrl}>
+              {webdavRestoring ? <>恢复中...</> : <><Download className="w-4 h-4 mr-1" />下载恢复</>}
+            </Button>
+          </div>
+          {lastSync && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <CheckCircle className="w-3 h-3" />
+              上次同步：{new Date(lastSync).toLocaleString("zh-CN")}
+            </p>
+          )}
         </CardContent>
       </Card>
 
