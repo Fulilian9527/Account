@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
+import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/components/supabase-provider"
 import { Button } from "@/components/ui/button"
@@ -8,12 +9,11 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
+
 import { toast } from "sonner"
 import { useTheme } from "next-themes"
-import { Sun, Moon, Monitor, Download, Upload, Sparkles, User, Shield, PlugIcon, Cloud, CheckCircle, AlertTriangle } from "lucide-react"
-import { getWebDAVConfig, saveWebDAVConfig, testWebDAVConnection, uploadWithRotation, downloadLatestBackup, exportLocalData, importLocalData } from "@/lib/webdav"
-import { encryptUserSecret, decryptUserSecret } from "@/lib/crypto"
+import { Sun, Moon, Monitor, Download, Sparkles, User, Shield, PlugIcon, Wallet, Tags, PiggyBank, Bell, KeyRound } from "lucide-react"
+import { encryptUserSecret, decryptUserSecret, storeSessionKey } from "@/lib/crypto"
 
 export default function SettingsPage() {
   const { user, signOut } = useAuth()
@@ -27,16 +27,10 @@ export default function SettingsPage() {
   const [currency, setCurrency] = useState("CNY")
   const [loading, setLoading] = useState(false)
   const [testing, setTesting] = useState(false)
-
-  const [webdavUrl, setWebdavUrl] = useState("")
-  const [webdavUsername, setWebdavUsername] = useState("")
-  const [webdavPassword, setWebdavPassword] = useState("")
-  const [webdavPath, setWebdavPath] = useState("")
-  const [webdavTesting, setWebdavTesting] = useState(false)
-  const [webdavSyncing, setWebdavSyncing] = useState(false)
-  const [webdavRestoring, setWebdavRestoring] = useState(false)
-  const [lastSync, setLastSync] = useState<string | null>(null)
-  const webdavIsHttp = webdavUrl.startsWith("http://")
+  const [pwCurrent, setPwCurrent] = useState("")
+  const [pwNew, setPwNew] = useState("")
+  const [pwConfirm, setPwConfirm] = useState("")
+  const [pwLoading, setPwLoading] = useState(false)
 
   useEffect(() => {
     if (!user) return
@@ -51,19 +45,6 @@ export default function SettingsPage() {
         setCurrency(record.currency || "CNY")
       }
     })
-
-    const wc = getWebDAVConfig()
-    if (wc) {
-      setWebdavUrl(wc.url)
-      setWebdavUsername(wc.username)
-      if (wc.password && user) {
-        decryptUserSecret(user.id, wc.password).then(decrypted => {
-          if (decrypted) setWebdavPassword(decrypted)
-        })
-      }
-      setWebdavPath(wc.path)
-    }
-    setLastSync(localStorage.getItem("expense_tracker__last_sync"))
   }, [user])
 
   const handleSaveAi = async () => {
@@ -116,78 +97,40 @@ export default function SettingsPage() {
     setTesting(false)
   }
 
-  const handleSaveWebDAV = async () => {
-    const encryptedPw = webdavPassword ? await encryptUserSecret(user!.id, webdavPassword) : ""
-    saveWebDAVConfig({ url: webdavUrl, username: webdavUsername, password: encryptedPw, path: webdavPath })
-    toast.success("WebDAV 配置已保存")
-  }
-
-function isInsecureHttp(url: string): boolean {
-  return url.startsWith("http://") && !url.includes("localhost") && !url.includes("127.0.0.1")
-}
-
-  const handleTestWebDAV = async () => {
-    if (isInsecureHttp(webdavUrl)) {
-      toast.error("WebDAV 地址请使用 HTTPS 加密连接")
+  const handleChangePassword = async () => {
+    if (!pwCurrent || !pwNew || !pwConfirm) {
+      toast.error("请填写完整")
       return
     }
-    setWebdavTesting(true)
-    const result = await testWebDAVConnection({ url: webdavUrl, username: webdavUsername, password: webdavPassword, path: webdavPath })
-    if (result.ok) {
-      toast.success("WebDAV 连接成功")
+    if (pwNew.length < 6) {
+      toast.error("新密码至少 6 位")
+      return
+    }
+    if (pwNew !== pwConfirm) {
+      toast.error("两次密码不一致")
+      return
+    }
+    setPwLoading(true)
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user!.email!,
+      password: pwCurrent,
+    })
+    if (signInError) {
+      toast.error("当前密码错误")
+      setPwLoading(false)
+      return
+    }
+    const { error } = await supabase.auth.updateUser({ password: pwNew })
+    if (error) {
+      toast.error(error.message)
     } else {
-      toast.error("连接失败：" + (result.error || "未知错误"))
+      storeSessionKey(pwNew)
+      toast.success("密码已修改")
+      setPwCurrent("")
+      setPwNew("")
+      setPwConfirm("")
     }
-    setWebdavTesting(false)
-  }
-
-  const handleSyncUpload = async () => {
-    if (!webdavUrl || !webdavUsername || !webdavPassword) {
-      toast.error("请先填写 WebDAV 配置")
-      return
-    }
-    if (isInsecureHttp(webdavUrl)) {
-      toast.error("WebDAV 地址请使用 HTTPS 加密连接")
-      return
-    }
-    setWebdavSyncing(true)
-    const config = { url: webdavUrl, username: webdavUsername, password: webdavPassword, path: webdavPath }
-    const data = exportLocalData()
-    const result = await uploadWithRotation(config, data)
-    if (result.ok) {
-      const nowStr = new Date().toISOString()
-      localStorage.setItem("expense_tracker__last_sync", nowStr)
-      setLastSync(nowStr)
-      toast.success("数据已同步到 WebDAV")
-    } else {
-      toast.error("同步失败：" + (result.error || "未知错误"))
-    }
-    setWebdavSyncing(false)
-  }
-
-  const handleSyncDownload = async () => {
-    if (!webdavUrl || !webdavUsername || !webdavPassword) {
-      toast.error("请先填写 WebDAV 配置")
-      return
-    }
-    if (isInsecureHttp(webdavUrl)) {
-      toast.error("WebDAV 地址请使用 HTTPS 加密连接")
-      return
-    }
-    setWebdavRestoring(true)
-    const config = { url: webdavUrl, username: webdavUsername, password: webdavPassword, path: webdavPath }
-    const result = await downloadLatestBackup(config)
-    if (result.ok && result.data) {
-      const importResult = importLocalData(result.data)
-      if (importResult.ok) {
-        toast.success("数据已从 WebDAV 恢复，请刷新页面查看")
-      } else {
-        toast.error(importResult.error || "数据恢复失败")
-      }
-    } else {
-      toast.error("下载失败：" + (result.error || "未知错误"))
-    }
-    setWebdavRestoring(false)
+    setPwLoading(false)
   }
 
   const handleExport = async () => {
@@ -220,6 +163,27 @@ function isInsecureHttp(url: string): boolean {
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-2xl">
       <h1 className="text-2xl font-bold">设置</h1>
+
+      <Card>
+        <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+          {[
+            { href: "/accounts", label: "账户", icon: Wallet, desc: "管理资金账户" },
+            { href: "/categories", label: "分类", icon: Tags, desc: "管理收支分类" },
+            { href: "/budgets", label: "预算", icon: PiggyBank, desc: "设定消费预算" },
+            { href: "/bills", label: "提醒", icon: Bell, desc: "管理账单提醒" },
+          ].map(item => (
+            <Link key={item.href} href={item.href}>
+              <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl hover:bg-accent transition-colors cursor-pointer">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <item.icon className="w-5 h-5 text-primary" />
+                </div>
+                <span className="text-sm font-medium">{item.label}</span>
+                <span className="text-[10px] text-muted-foreground text-center leading-tight">{item.desc}</span>
+              </div>
+            </Link>
+          ))}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -325,61 +289,26 @@ function isInsecureHttp(url: string): boolean {
       <Card>
         <CardHeader>
           <div className="flex items-center gap-2">
-            <Cloud className="w-5 h-5 text-muted-foreground" />
-            <CardTitle className="text-base">WebDAV 同步</CardTitle>
-            <CardDescription className="ml-2">通过 WebDAV 备份和恢复数据</CardDescription>
+            <KeyRound className="w-5 h-5 text-muted-foreground" />
+            <CardTitle className="text-base">修改密码</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>WebDAV 地址</Label>
-            <Input value={webdavUrl} onChange={e => setWebdavUrl(e.target.value)}
-              placeholder="https://example.com/remote.php/dav/files/username" />
-            {webdavIsHttp && (
-              <p className="text-xs text-destructive flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" />当前使用 HTTP，密码将以明文传输，建议改用 HTTPS
-              </p>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>用户名</Label>
-              <Input value={webdavUsername} onChange={e => setWebdavUsername(e.target.value)}
-                placeholder="username" />
-            </div>
-            <div className="space-y-2">
-              <Label>密码</Label>
-              <Input type="password" value={webdavPassword} onChange={e => setWebdavPassword(e.target.value)}
-                placeholder="password" />
-            </div>
+            <Label>当前密码</Label>
+            <Input type="password" value={pwCurrent} onChange={e => setPwCurrent(e.target.value)} placeholder="输入当前密码" />
           </div>
           <div className="space-y-2">
-            <Label>远程路径 (可选)</Label>
-            <Input value={webdavPath} onChange={e => setWebdavPath(e.target.value)}
-              placeholder="apps/账小记" />
-            <p className="text-xs text-muted-foreground">文件将保存到此路径下，留空使用根目录</p>
+            <Label>新密码</Label>
+            <Input type="password" value={pwNew} onChange={e => setPwNew(e.target.value)} placeholder="至少 6 位" />
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={handleSaveWebDAV}>保存配置</Button>
-            <Button variant="outline" size="sm" onClick={handleTestWebDAV} disabled={webdavTesting || !webdavUrl}>
-              {webdavTesting ? "测试中..." : <><PlugIcon className="w-4 h-4 mr-1" />测试连接</>}
-            </Button>
+          <div className="space-y-2">
+            <Label>确认新密码</Label>
+            <Input type="password" value={pwConfirm} onChange={e => setPwConfirm(e.target.value)} placeholder="再次输入新密码" />
           </div>
-          <Separator />
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={handleSyncUpload} disabled={webdavSyncing || !webdavUrl}>
-              {webdavSyncing ? <>同步中...</> : <><Upload className="w-4 h-4 mr-1" />上传同步</>}
-            </Button>
-            <Button variant="secondary" onClick={handleSyncDownload} disabled={webdavRestoring || !webdavUrl}>
-              {webdavRestoring ? <>恢复中...</> : <><Download className="w-4 h-4 mr-1" />下载恢复</>}
-            </Button>
-          </div>
-          {lastSync && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <CheckCircle className="w-3 h-3" />
-              上次同步：{new Date(lastSync).toLocaleString("zh-CN")}
-            </p>
-          )}
+          <Button onClick={handleChangePassword} disabled={pwLoading}>
+            {pwLoading ? "修改中..." : "修改密码"}
+          </Button>
         </CardContent>
       </Card>
 

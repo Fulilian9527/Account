@@ -42,20 +42,6 @@ function getEffectiveKey(userId: string): string {
   return userId
 }
 
-export async function hashPassword(password: string, existingSalt?: string): Promise<{ hash: string; salt: string }> {
-  const salt: ArrayBuffer = existingSalt
-    ? ub64(existingSalt)
-    : crypto.getRandomValues(new Uint8Array(16)).buffer as ArrayBuffer
-  const key = await (crypto.subtle.importKey as any)("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"])
-  const hash = await (crypto.subtle.deriveBits as any)({ name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" }, key, 256)
-  return { hash: b64(hash), salt: b64(salt) }
-}
-
-export async function verifyPassword(password: string, storedHash: string, storedSalt: string): Promise<boolean> {
-  const { hash } = await hashPassword(password, storedSalt)
-  return hash === storedHash
-}
-
 export async function encryptSecret(password: string, plaintext: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(16)).buffer as ArrayBuffer
   const iv = crypto.getRandomValues(new Uint8Array(12))
