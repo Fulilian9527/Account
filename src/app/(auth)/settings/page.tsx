@@ -44,6 +44,7 @@ export default function SettingsPage() {
   const [webdavRestoring, setWebdavRestoring] = useState(false)
   const [lastSync, setLastSync] = useState<string | null>(null)
   const [autoSync, setAutoSync] = useState(false)
+  const [syncInterval, setSyncInterval] = useState(30)
   const webdavIsHttp = webdavUrl.startsWith("http://")
 
   useEffect(() => {
@@ -73,10 +74,13 @@ export default function SettingsPage() {
     }
     setLastSync(localStorage.getItem("expense_tracker__last_sync"))
     setAutoSync(localStorage.getItem("expense_tracker__auto_sync") === "true")
+    const savedInterval = localStorage.getItem("expense_tracker__sync_interval")
+    if (savedInterval) setSyncInterval(parseInt(savedInterval, 10) || 30)
   }, [user])
 
   useEffect(() => {
     localStorage.setItem("expense_tracker__auto_sync", String(autoSync))
+    localStorage.setItem("expense_tracker__sync_interval", String(syncInterval))
     if (!autoSync) return
     if (!webdavUrl || !webdavUsername || !webdavPassword) return
 
@@ -91,9 +95,9 @@ export default function SettingsPage() {
       }
     }
     doSync()
-    const interval = setInterval(doSync, 30 * 60 * 1000)
+    const interval = setInterval(doSync, syncInterval * 60 * 1000)
     return () => clearInterval(interval)
-  }, [autoSync, webdavUrl, webdavUsername, webdavPassword, webdavPath, user])
+  }, [autoSync, syncInterval, webdavUrl, webdavUsername, webdavPassword, webdavPath, user])
 
   const handleSaveAi = async () => {
     setLoading(true)
@@ -459,7 +463,10 @@ export default function SettingsPage() {
             <Label className="text-sm">自动同步</Label>
             <Switch checked={autoSync} onCheckedChange={setAutoSync} disabled={!webdavUrl || !webdavUsername || !webdavPassword} />
           </div>
-          <p className="text-xs text-muted-foreground -mt-2">开启后每 30 分钟自动备份数据到 WebDAV</p>
+          <div className="flex items-center gap-2 -mt-2">
+            <Input type="number" min={5} max={1440} value={syncInterval} onChange={e => setSyncInterval(parseInt(e.target.value, 10) || 30)} disabled={!autoSync} className="w-20 h-8 text-sm" />
+            <span className="text-xs text-muted-foreground">分钟同步一次</span>
+          </div>
           <Separator />
           <div className="flex flex-wrap gap-2">
             <Button onClick={handleSyncUpload} disabled={webdavSyncing || !webdavUrl}>
