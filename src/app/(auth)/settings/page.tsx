@@ -146,7 +146,7 @@ export default function SettingsPage() {
       })
       const data = await res.json()
       if (data.ok) {
-        toast.success("杩炴帴鎴愬姛锛? + (data.message ? ` AI 鍥炲锛?{data.message}` : ""))
+        toast.success("连接成功" + (data.message ? " AI 回复：" + data.message : ""))
       } else {
         toast.error("杩炴帴澶辫触锛? + data.error)
       }
