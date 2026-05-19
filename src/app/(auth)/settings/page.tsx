@@ -254,26 +254,26 @@ export default function SettingsPage() {
 
   const handleTestWebDAV = async () => {
     if (isInsecureHttp(webdavUrl)) {
-      toast.error("WebDAV 鍦板潃璇蜂娇鐢?HTTPS 鍔犲瘑杩炴帴")
+      toast.error("WebDAV 地址请使用 HTTPS 加密连接")
       return
     }
     setWebdavTesting(true)
     const result = await testWebDAVConnection({ url: webdavUrl, username: webdavUsername, password: webdavPassword, path: webdavPath })
     if (result.ok) {
-      toast.success("WebDAV 杩炴帴鎴愬姛")
+      toast.success("WebDAV 连接成功")
     } else {
-      toast.error("杩炴帴澶辫触锛? + (result.error || "鏈煡閿欒"))
+      toast.error("连接失败：" + (result.error || "未知错误"))
     }
     setWebdavTesting(false)
   }
 
   const handleSyncUpload = async () => {
     if (!webdavUrl || !webdavUsername || !webdavPassword) {
-      toast.error("璇峰厛濉啓 WebDAV 閰嶇疆")
+      toast.error("请先填写 WebDAV 配置")
       return
     }
     if (isInsecureHttp(webdavUrl)) {
-      toast.error("WebDAV 鍦板潃璇蜂娇鐢?HTTPS 鍔犲瘑杩炴帴")
+      toast.error("WebDAV 地址请使用 HTTPS 加密连接")
       return
     }
     setWebdavSyncing(true)
@@ -284,20 +284,20 @@ export default function SettingsPage() {
       const nowStr = new Date().toISOString()
       localStorage.setItem("expense_tracker__last_sync", nowStr)
       setLastSync(nowStr)
-      toast.success("鏁版嵁宸插悓姝ュ埌 WebDAV")
+      toast.success("数据已同步到 WebDAV")
     } else {
-      toast.error("鍚屾澶辫触锛? + (result.error || "鏈煡閿欒"))
+      toast.error("同步失败： + (result.error || "未知错误"))
     }
     setWebdavSyncing(false)
   }
 
   const handleSyncDownload = async () => {
     if (!webdavUrl || !webdavUsername || !webdavPassword) {
-      toast.error("璇峰厛濉啓 WebDAV 閰嶇疆")
+      toast.error("请先填写 WebDAV 配置")
       return
     }
     if (isInsecureHttp(webdavUrl)) {
-      toast.error("WebDAV 鍦板潃璇蜂娇鐢?HTTPS 鍔犲瘑杩炴帴")
+      toast.error("WebDAV 地址请使用 HTTPS 加密连接")
       return
     }
     setWebdavRestoring(true)
@@ -306,12 +306,12 @@ export default function SettingsPage() {
     if (result.ok && result.data) {
       const importResult = await importSupabaseData(user!.id, result.data)
       if (importResult.ok) {
-        toast.success("鏁版嵁宸蹭粠 WebDAV 鎭㈠")
+        toast.success("数据已从 WebDAV 恢复")
       } else {
-        toast.error(importResult.error || "鏁版嵁鎭㈠澶辫触")
+        toast.error(importResult.error || "数据恢复失败")
       }
     } else {
-      toast.error("涓嬭浇澶辫触锛? + (result.error || "鏈煡閿欒"))
+      toast.error("下载失败： + (result.error || "未知错误"))
     }
     setWebdavRestoring(false)
   }
@@ -325,7 +325,7 @@ export default function SettingsPage() {
       .order("date", { ascending: false })
 
     if (!txData || txData.length === 0) {
-      toast.error("鏆傛棤鏁版嵁鍙鍑?)
+      toast.error("暂无数据可导出)
       return
     }
 
@@ -340,7 +340,7 @@ export default function SettingsPage() {
     a.download = `璐﹀皬璁癬${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
     URL.revokeObjectURL(url)
-    toast.success("瀵煎嚭鎴愬姛")
+    toast.success("导出成功")
   }
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-2xl">

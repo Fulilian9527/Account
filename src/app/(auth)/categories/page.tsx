@@ -63,8 +63,8 @@ export default function CategoriesPage() {
       type: form.type,
       sort_order: maxOrder,
     })
-    if (error) { toast.error("娣诲姞澶辫触") } else {
-      toast.success("娣诲姞鎴愬姛")
+    if (error) { toast.error("添加失败") } else {
+      toast.success("添加成功")
       setShowAdd(false)
       setForm({ name: "", icon: "馃搫", color: "#3b82f6", type: "expense" })
       fetchData()
@@ -73,8 +73,8 @@ export default function CategoriesPage() {
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("categories").delete().eq("id", id)
-    if (error) { toast.error("鍒犻櫎澶辫触") } else {
-      toast.success("宸插垹闄?)
+    if (error) { toast.error("删除失败") } else {
+      toast.success("已删除")
       fetchData()
     }
   }
