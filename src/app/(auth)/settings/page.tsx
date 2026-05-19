@@ -462,7 +462,7 @@ export default function SettingsPage() {
                   <Button size="sm" onClick={handleSaveAi} disabled={loading}>
                     {loading ? "保存中..." : "保存配置"}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={handleTestAi} disabled={testing || !aiApiKey}>
+                  <Button variant="outline" size="sm" onClick={handleTest} disabled={testing || !aiApiKey}>
                     {testing ? "测试中..." : <><Sparkles className="w-4 h-4 mr-1" />测试连接</>}
                   </Button>
                 </div>
