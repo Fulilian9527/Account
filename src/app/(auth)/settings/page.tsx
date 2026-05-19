@@ -286,7 +286,7 @@ export default function SettingsPage() {
       setLastSync(nowStr)
       toast.success("数据已同步到 WebDAV")
     } else {
-      toast.error("同步失败： + (result.error || "未知错误"))
+      toast.error("同步失败：" + (result.error || "未知错误"))
     }
     setWebdavSyncing(false)
   }
@@ -311,7 +311,7 @@ export default function SettingsPage() {
         toast.error(importResult.error || "数据恢复失败")
       }
     } else {
-      toast.error("下载失败： + (result.error || "未知错误"))
+      toast.error("下载失败：" + (result.error || "未知错误"))
     }
     setWebdavRestoring(false)
   }
@@ -325,7 +325,7 @@ export default function SettingsPage() {
       .order("date", { ascending: false })
 
     if (!txData || txData.length === 0) {
-      toast.error("暂无数据可导出)
+      toast.error("暂无数据可导出")
       return
     }
 
