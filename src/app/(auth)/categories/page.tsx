@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
-const ICONS = ["馃崝", "馃洅", "馃殫", "馃彔", "馃幃", "馃憰", "馃摫", "鉁堬笍", "馃摎", "馃拪", "馃幀", "馃弸锔?, "馃惐", "馃拠", "馃巵", "馃挵", "馃捈", "馃摝", "馃彞", "鈽?]
+const ICONS = ["🍝", "🛒", "🚗", "🏠", "🎮", "👕", "📱", "💊", "📎", "💳", "🎀", "🧧", "🐶", "🎯", "🧵", "💰", "💈", "📝", "🧞", "⭐"]
 
 const COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6", "#6366f1"]
 
