@@ -343,158 +343,156 @@ export default function SettingsPage() {
     toast.success("导出成功")
   }
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-2xl">
-      <h1 className="text-2xl font-bold">设置</h1>
+    <div className="p-4 md:p-6 lg:p-8 space-y-6 max-w-3xl mx-auto safe-area-top">
+      <h1 className="text-2xl font-bold tracking-tight">设置</h1>
 
-      <Card>
-        <CardContent className="p-2">
-          {[
-            { href: "/accounts", label: "账户", icon: Wallet, desc: "管理资金账户" },
-            { href: "/categories", label: "分类", icon: Tags, desc: "管理收支分类" },
-            { href: "/budgets", label: "预算", icon: PiggyBank, desc: "设定消费预算" },
-            { href: "/bills", label: "提醒", icon: Bell, desc: "管理账单提醒" },
-          ].map((item, i) => (
-            <Link key={item.href} href={item.href}>
-              <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
-                <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <item.icon className="w-4.5 h-4.5 text-primary" />
+      {/* Quick Links Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        {[
+          { href: "/accounts", label: "账户", icon: Wallet, desc: "管理资金账户" },
+          { href: "/categories", label: "分类", icon: Tags, desc: "管理收支分类" },
+          { href: "/budgets", label: "预算", icon: PiggyBank, desc: "设定消费预算" },
+          { href: "/bills", label: "提醒", icon: Bell, desc: "管理账单提醒" },
+        ].map((item) => (
+          <Link key={item.href} href={item.href}>
+            <Card className="group hover:bg-accent/50 transition-colors cursor-pointer">
+              <CardContent className="flex items-center gap-3 p-4">
+                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/15 transition-colors">
+                  <item.icon className="w-5 h-5 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{item.label}</p>
-                  <p className="text-xs text-muted-foreground truncate">{item.desc}</p>
+                  <p className="text-xs text-muted-foreground">{item.desc}</p>
                 </div>
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground shrink-0"><polyline points="9 18 15 12 9 6"/></svg>
-              </div>
-            </Link>
-          ))}
-        </CardContent>
-      </Card>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-muted-foreground/50 shrink-0 group-hover:text-muted-foreground transition-colors"><polyline points="9 18 15 12 9 6"/></svg>
+              </CardContent>
+            </Card>
+          </Link>
+        ))}
+      </div>
 
+      {/* Settings Sections */}
       <Card>
-        <Accordion type="multiple" className="w-full border-0">
-          <AccordionItem value="account" className="border-0">
-            <AccordionTrigger className="hover:no-underline py-4 px-0">
-              <div className="flex items-center gap-2">
-                <User className="w-5 h-5 text-muted-foreground" />
-                <span className="text-base font-semibold">账户信息</span>
+        <Accordion type="multiple" className="w-full">
+          <AccordionItem value="account">
+            <AccordionTrigger className="hover:no-underline py-4 px-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-md bg-blue-500/10 flex items-center justify-center">
+                  <User className="w-4 h-4 text-blue-500" />
+                </div>
+                <span className="text-sm font-semibold">账户信息</span>
               </div>
             </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-3 pt-2">
+            <AccordionContent className="px-4">
+              <div className="space-y-3 pt-1 pb-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">邮箱</span>
-                  <span>{user?.email}</span>
+                  <span className="truncate ml-4">{user?.email}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">用户 ID</span>
-                  <span className="font-mono text-xs">{user?.id?.slice(0, 12)}...</span>
+                  <span className="font-mono text-xs truncate ml-4">{user?.id?.slice(0, 16)}...</span>
                 </div>
               </div>
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="appearance" className="border-0 border-t">
-            <AccordionTrigger className="hover:no-underline py-4 px-0">
-              <div className="flex items-center gap-2">
-                <Sun className="w-5 h-5 text-muted-foreground" />
-                <span className="text-base font-semibold">外观</span>
+          <AccordionItem value="appearance">
+            <AccordionTrigger className="hover:no-underline py-4 px-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-md bg-violet-500/10 flex items-center justify-center">
+                  <Sun className="w-4 h-4 text-violet-500" />
+                </div>
+                <span className="text-sm font-semibold">外观</span>
               </div>
             </AccordionTrigger>
-            <AccordionContent>
-              <div className="flex gap-2 pt-2">
+            <AccordionContent className="px-4">
+              <div className="flex gap-2 pt-1 pb-2">
                 <Button variant={theme === "light" ? "default" : "outline"} size="sm" onClick={() => setTheme("light")}>
-                  <Sun className="w-4 h-4 mr-1" /> 浅色
+                  <Sun className="w-4 h-4 mr-1.5" /> 浅色
                 </Button>
                 <Button variant={theme === "dark" ? "default" : "outline"} size="sm" onClick={() => setTheme("dark")}>
-                  <Moon className="w-4 h-4 mr-1" /> 深色
+                  <Moon className="w-4 h-4 mr-1.5" /> 深色
                 </Button>
                 <Button variant={theme === "system" ? "default" : "outline"} size="sm" onClick={() => setTheme("system")}>
-                  <Monitor className="w-4 h-4 mr-1" /> 跟随系统
+                  <Monitor className="w-4 h-4 mr-1.5" /> 跟随系统
                 </Button>
               </div>
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="ai" className="border-0 border-t">
-            <AccordionTrigger className="hover:no-underline py-4 px-0">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-muted-foreground" />
-                <span className="text-base font-semibold">AI 配置</span>
+          <AccordionItem value="ai">
+            <AccordionTrigger className="hover:no-underline py-4 px-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-md bg-amber-500/10 flex items-center justify-center">
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                </div>
+                <span className="text-sm font-semibold">AI 配置</span>
               </div>
             </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <Label>AI 提供商</Label>
-                  <Select value={aiProvider} onValueChange={setAiProvider}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="openai">OpenAI</SelectItem>
-                      <SelectItem value="deepseek">DeepSeek</SelectItem>
-                      <SelectItem value="custom">自定义中转站</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>API 中转地址 (Base URL)</Label>
-                  <Input value={aiBaseUrl} onChange={e => setAiBaseUrl(e.target.value)}
-                    placeholder={aiProvider === "deepseek" ? "https://api.deepseek.com" : aiProvider === "openai" ? "https://api.openai.com" : "https://your-proxy.com/v1"} />
-                  <p className="text-xs text-muted-foreground">留空使用官方地址，填写中转站地址即可通过中转站调用</p>
-                </div>
-                <div className="space-y-2">
-                  <Label>模型</Label>
-                  <Input value={aiModel} onChange={e => setAiModel(e.target.value)}
-                    placeholder={aiProvider === "deepseek" ? "deepseek-chat" : "gpt-4o-mini"} />
+            <AccordionContent className="px-4">
+              <div className="space-y-4 pt-1 pb-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>AI 提供商</Label>
+                    <Select value={aiProvider} onValueChange={setAiProvider}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="openai">OpenAI</SelectItem>
+                        <SelectItem value="custom">自定义</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>模型</Label>
+                    <Input value={aiModel} onChange={e => setAiModel(e.target.value)} placeholder="gpt-4o-mini" />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>API Key</Label>
-                  <Input type="password" value={aiApiKey} onChange={e => setAiApiKey(e.target.value)}
-                    placeholder="sk-..." />
+                  <Input type="password" value={aiApiKey} onChange={e => setAiApiKey(e.target.value)} placeholder="sk-..." />
                 </div>
-                <div className="flex gap-2">
-                  <Button onClick={handleSaveAi} disabled={loading}>{loading ? "保存中..." : "保存 AI 配置"}</Button>
-                  <Button variant="outline" onClick={handleTest} disabled={testing || !aiApiKey}>
-                    {testing ? "测试中..." : "测试连接"}
+                {aiProvider === "custom" && (
+                  <div className="space-y-2">
+                    <Label>Base URL</Label>
+                    <Input value={aiBaseUrl} onChange={e => setAiBaseUrl(e.target.value)} placeholder="https://api.example.com/v1" />
+                  </div>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" onClick={handleSaveAi} disabled={loading}>
+                    {loading ? "保存中..." : "保存配置"}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={handleTestAi} disabled={testing || !aiApiKey}>
+                    {testing ? "测试中..." : <><Sparkles className="w-4 h-4 mr-1" />测试连接</>}
                   </Button>
                 </div>
               </div>
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="data" className="border-0 border-t">
-            <AccordionTrigger className="hover:no-underline py-4 px-0">
-              <div className="flex items-center gap-2">
-                <Download className="w-5 h-5 text-muted-foreground" />
-                <span className="text-base font-semibold">数据管理</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <Button variant="outline" onClick={handleExport}>
-                <Download className="w-4 h-4 mr-1" /> 导出 CSV
-              </Button>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="webdav" className="border-0 border-t">
-            <AccordionTrigger className="hover:no-underline py-4 px-0">
-              <div className="flex items-center gap-2">
-                <Cloud className="w-5 h-5 text-muted-foreground" />
-                <span className="text-base font-semibold">WebDAV 同步</span>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <Label>WebDAV 地址</Label>
-                  <Input value={webdavUrl} onChange={e => setWebdavUrl(e.target.value)}
-                    placeholder="https://example.com/remote.php/dav/files/username" />
-                  {webdavIsHttp && (
-                    <p className="text-xs text-destructive flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3" />当前使用 HTTP，密码将以明文传输，建议改用 HTTPS
-                    </p>
-                  )}
+          <AccordionItem value="webdav">
+            <AccordionTrigger className="hover:no-underline py-4 px-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-md bg-emerald-500/10 flex items-center justify-center">
+                  <Cloud className="w-4 h-4 text-emerald-500" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <span className="text-sm font-semibold">WebDAV 同步</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-4">
+              <div className="space-y-4 pt-1 pb-2">
+                {webdavIsHttp && (
+                  <div className="flex items-center gap-2 text-sm text-amber-600 dark:text-amber-400 bg-amber-500/10 rounded-md p-2.5">
+                    <AlertTriangle className="w-4 h-4 shrink-0" />
+                    <span>HTTP 连接不安全，建议使用 HTTPS</span>
+                  </div>
+                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>服务器地址</Label>
+                    <Input value={webdavUrl} onChange={e => setWebdavUrl(e.target.value)}
+                      placeholder="https://dav.example.com" />
+                  </div>
                   <div className="space-y-2">
                     <Label>用户名</Label>
                     <Input value={webdavUsername} onChange={e => setWebdavUsername(e.target.value)}
@@ -505,13 +503,13 @@ export default function SettingsPage() {
                     <Input type="password" value={webdavPassword} onChange={e => setWebdavPassword(e.target.value)}
                       placeholder="password" />
                   </div>
+                  <div className="space-y-2">
+                    <Label>远程路径 (可选)</Label>
+                    <Input value={webdavPath} onChange={e => setWebdavPath(e.target.value)}
+                      placeholder="apps/账小记" />
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>远程路径 (可选)</Label>
-                  <Input value={webdavPath} onChange={e => setWebdavPath(e.target.value)}
-                    placeholder="apps/账小记" />
-                  <p className="text-xs text-muted-foreground">文件将保存到此路径下，留空使用根目录</p>
-                </div>
+                <p className="text-xs text-muted-foreground">文件将保存到此路径下，留空使用根目录</p>
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" size="sm" onClick={handleSaveWebDAV}>保存配置</Button>
                   <Button variant="outline" size="sm" onClick={handleTestWebDAV} disabled={webdavTesting || !webdavUrl}>
@@ -529,10 +527,10 @@ export default function SettingsPage() {
                 </div>
                 <Separator />
                 <div className="flex flex-wrap gap-2">
-                  <Button onClick={handleSyncUpload} disabled={webdavSyncing || !webdavUrl}>
+                  <Button size="sm" onClick={handleSyncUpload} disabled={webdavSyncing || !webdavUrl}>
                     {webdavSyncing ? <>同步中...</> : <><Upload className="w-4 h-4 mr-1" />上传同步</>}
                   </Button>
-                  <Button variant="secondary" onClick={handleSyncDownload} disabled={webdavRestoring || !webdavUrl}>
+                  <Button variant="secondary" size="sm" onClick={handleSyncDownload} disabled={webdavRestoring || !webdavUrl}>
                     {webdavRestoring ? <>恢复中...</> : <><Download className="w-4 h-4 mr-1" />下载恢复</>}
                   </Button>
                 </div>
@@ -546,15 +544,17 @@ export default function SettingsPage() {
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="password" className="border-0 border-t">
-            <AccordionTrigger className="hover:no-underline py-4 px-0">
-              <div className="flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-muted-foreground" />
-                <span className="text-base font-semibold">修改密码</span>
+          <AccordionItem value="password">
+            <AccordionTrigger className="hover:no-underline py-4 px-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-md bg-orange-500/10 flex items-center justify-center">
+                  <KeyRound className="w-4 h-4 text-orange-500" />
+                </div>
+                <span className="text-sm font-semibold">修改密码</span>
               </div>
             </AccordionTrigger>
-            <AccordionContent>
-              <div className="space-y-4 pt-2">
+            <AccordionContent className="px-4">
+              <div className="space-y-4 pt-1 pb-2 max-w-sm">
                 <div className="space-y-2">
                   <Label>当前密码</Label>
                   <Input type="password" value={pwCurrent} onChange={e => setPwCurrent(e.target.value)} placeholder="输入当前密码" />
@@ -567,22 +567,24 @@ export default function SettingsPage() {
                   <Label>确认新密码</Label>
                   <Input type="password" value={pwConfirm} onChange={e => setPwConfirm(e.target.value)} placeholder="再次输入新密码" />
                 </div>
-                <Button onClick={handleChangePassword} disabled={pwLoading}>
+                <Button size="sm" onClick={handleChangePassword} disabled={pwLoading}>
                   {pwLoading ? "修改中..." : "修改密码"}
                 </Button>
               </div>
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="danger" className="border-0 border-t">
-            <AccordionTrigger className="hover:no-underline py-4 px-0 text-destructive">
-              <div className="flex items-center gap-2">
-                <Shield className="w-5 h-5" />
-                <span className="text-base font-semibold">危险操作</span>
+          <AccordionItem value="danger">
+            <AccordionTrigger className="hover:no-underline py-4 px-4 text-destructive">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-md bg-destructive/10 flex items-center justify-center">
+                  <Shield className="w-4 h-4 text-destructive" />
+                </div>
+                <span className="text-sm font-semibold">危险操作</span>
               </div>
             </AccordionTrigger>
-            <AccordionContent>
-              <Button variant="destructive" onClick={signOut}>退出登录</Button>
+            <AccordionContent className="px-4">
+              <Button variant="destructive" size="sm" onClick={signOut}>退出登录</Button>
             </AccordionContent>
           </AccordionItem>
         </Accordion>
