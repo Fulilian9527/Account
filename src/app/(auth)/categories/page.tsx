@@ -18,21 +18,21 @@ const ICONS = ["🍝", "🛒", "🚗", "🏠", "🎮", "👕", "📱", "💊", "
 const COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6", "#6366f1"]
 
 const DEFAULT_EXPENSE = [
-  { name: "椁愰ギ", icon: "馃崝", color: "#ef4444" },
-  { name: "璐墿", icon: "馃洅", color: "#f97316" },
-  { name: "浜ら€?, icon: "馃殫", color: "#eab308" },
-  { name: "灞呬綇", icon: "馃彔", color: "#06b6d4" },
-  { name: "濞变箰", icon: "馃幃", color: "#8b5cf6" },
-  { name: "鏈嶉グ", icon: "馃憰", color: "#ec4899" },
-  { name: "鏁扮爜", icon: "馃摫", color: "#3b82f6" },
-  { name: "鍖荤枟", icon: "馃拪", color: "#22c55e" },
+  { name: "餐饮", icon: "🍝", color: "#ef4444" },
+  { name: "购物", icon: "🛒", color: "#f97316" },
+  { name: "交通", icon: "🚗", color: "#eab308" },
+  { name: "居住", icon: "🏠", color: "#06b6d4" },
+  { name: "娱乐", icon: "🎮", color: "#8b5cf6" },
+  { name: "服饰", icon: "👕", color: "#ec4899" },
+  { name: "数码", icon: "📱", color: "#3b82f6" },
+  { name: "医疗", icon: "💊", color: "#22c55e" },
 ]
 
 const DEFAULT_INCOME = [
-  { name: "宸ヨ祫", icon: "馃挵", color: "#22c55e" },
-  { name: "鍏艰亴", icon: "馃捈", color: "#06b6d4" },
-  { name: "鎶曡祫", icon: "馃搱", color: "#8b5cf6" },
-  { name: "绾㈠寘", icon: "馃Ё", color: "#ef4444" },
+  { name: "工资", icon: "💰", color: "#22c55e" },
+  { name: "兼职", icon: "💈", color: "#06b6d4" },
+  { name: "投资", icon: "🎯", color: "#8b5cf6" },
+  { name: "红包", icon: "🧧", color: "#ef4444" },
 ]
 
 export default function CategoriesPage() {

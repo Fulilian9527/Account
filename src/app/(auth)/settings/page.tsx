@@ -122,13 +122,12 @@ export default function SettingsPage() {
     if (!error && data) {
       setSettingsId(data.id)
       await supabase.from("user_settings").delete().neq("id", data.id).eq("user_id", user!.id)
-      toast.success("淇濆瓨鎴愬姛")
+      toast.success("保存成功")
     } else {
-      toast.error("淇濆瓨澶辫触")
+      toast.error("保存失败")
     }
     setLoading(false)
   }
-
   const handleTest = async () => {
     setTesting(true)
     try {
@@ -148,25 +147,24 @@ export default function SettingsPage() {
       if (data.ok) {
         toast.success("连接成功" + (data.message ? " AI 回复：" + data.message : ""))
       } else {
-        toast.error("杩炴帴澶辫触锛? + data.error)
+        toast.error("连接失败：" + data.error)
       }
     } catch (err: any) {
-      toast.error("璇锋眰澶辫触锛? + err.message)
+      toast.error("请求失败：" + err.message)
     }
     setTesting(false)
   }
-
   const handleChangePassword = async () => {
     if (!pwCurrent || !pwNew || !pwConfirm) {
-      toast.error("璇峰～鍐欏畬鏁?)
+      toast.error("请填写完整信息")
       return
     }
     if (pwNew.length < 6) {
-      toast.error("鏂板瘑鐮佽嚦灏?6 浣?)
+      toast.error("新密码至少 6 位")
       return
     }
     if (pwNew !== pwConfirm) {
-      toast.error("涓ゆ瀵嗙爜涓嶄竴鑷?)
+      toast.error("两次密码不一致")
       return
     }
     setPwLoading(true)
@@ -175,7 +173,7 @@ export default function SettingsPage() {
       password: pwCurrent,
     })
     if (signInError) {
-      toast.error("褰撳墠瀵嗙爜閿欒")
+      toast.error("当前密码错误")
       setPwLoading(false)
       return
     }
