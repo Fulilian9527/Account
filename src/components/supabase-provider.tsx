@@ -1,9 +1,9 @@
-"use client"
+﻿"use client"
 
 import { createContext, useContext, useEffect, useState } from "react"
 import type { Session, User } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/client"
-import { getSessionKey, clearSessionKey } from "@/lib/crypto"
+import { clearSessionKey } from "@/lib/crypto"
 
 type AuthContext = {
   user: User | null
@@ -19,15 +19,7 @@ const AuthContext = createContext<AuthContext>({
   signOut: async () => {},
 })
 
-function ensureSessionKey() {
-  if (!getSessionKey()) {
-    try {
-      const random = crypto.getRandomValues(new Uint8Array(32))
-      const b64 = btoa(String.fromCharCode(...random))
-      sessionStorage.setItem("expense_tracker__ek", b64)
-    } catch {}
-  }
-}
+function ensureSessionKey() {}
 
 export function SupabaseProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)

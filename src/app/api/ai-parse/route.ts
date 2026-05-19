@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
+import { getCurrentUser } from "@/lib/supabase/server"
 
 const DEFAULT_URLS: Record<string, string> = {
   openai: "https://api.openai.com",
@@ -6,6 +7,11 @@ const DEFAULT_URLS: Record<string, string> = {
 }
 
 export async function POST(request: NextRequest) {
+  const user = await getCurrentUser()
+  if (!user) {
+    return NextResponse.json({ error: "未登录" }, { status: 401 })
+  }
+
   try {
     const { text, categories, aiConfig } = await request.json()
 
@@ -25,7 +31,6 @@ export async function POST(request: NextRequest) {
     const categoryNames = categories?.map((c: any) => c.name).join("、") || "餐饮、购物、交通、娱乐"
 
     const prompt = `你是一个智能记账助手。从用户的自然语言描述中提取记账信息。
-
 用户可用的分类（收入/支出）：${categoryNames}
 
 请严格按照以下 JSON 格式返回，不要包含任何其他文字：

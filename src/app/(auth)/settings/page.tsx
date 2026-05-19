@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import { useAuth } from "@/components/supabase-provider"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 
@@ -14,7 +14,8 @@ import { toast } from "sonner"
 import { useTheme } from "next-themes"
 import { Sun, Moon, Monitor, Download, Sparkles, User, Shield, PlugIcon, Wallet, Tags, PiggyBank, Bell, KeyRound, Cloud, Upload, CheckCircle, AlertTriangle } from "lucide-react"
 import { encryptUserSecret, decryptUserSecret, storeSessionKey } from "@/lib/crypto"
-import { getWebDAVConfig, saveWebDAVConfig, testWebDAVConnection, uploadWithRotation, downloadLatestBackup, exportSupabaseData, importSupabaseData } from "@/lib/webdav"
+import { testWebDAVConnection, uploadWithRotation, downloadLatestBackup, exportSupabaseData, importSupabaseData } from "@/lib/webdav"
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion"
 import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 
@@ -58,20 +59,16 @@ export default function SettingsPage() {
         setAiApiKey(record.ai_api_key ? (await decryptUserSecret(user.id, record.ai_api_key)) || record.ai_api_key : "")
         setAiBaseUrl(record.ai_base_url || "")
         setCurrency(record.currency || "CNY")
+        setWebdavUrl(record.webdav_url || "")
+        setWebdavUsername(record.webdav_username || "")
+        if (record.webdav_password) {
+          const decrypted = await decryptUserSecret(user.id, record.webdav_password)
+          if (decrypted) setWebdavPassword(decrypted)
+        }
+        setWebdavPath(record.webdav_path || "")
       }
     })
 
-    const wc = getWebDAVConfig()
-    if (wc) {
-      setWebdavUrl(wc.url)
-      setWebdavUsername(wc.username)
-      if (wc.password && user) {
-        decryptUserSecret(user.id, wc.password).then(decrypted => {
-          if (decrypted) setWebdavPassword(decrypted)
-        })
-      }
-      setWebdavPath(wc.path)
-    }
     setLastSync(localStorage.getItem("expense_tracker__last_sync"))
     setAutoSync(localStorage.getItem("expense_tracker__auto_sync") === "true")
     const savedInterval = localStorage.getItem("expense_tracker__sync_interval")
@@ -83,6 +80,7 @@ export default function SettingsPage() {
     localStorage.setItem("expense_tracker__sync_interval", String(syncInterval))
     if (!autoSync) return
     if (!webdavUrl || !webdavUsername || !webdavPassword) return
+    if (isInsecureHttp(webdavUrl)) return
 
     const doSync = async () => {
       const config = { url: webdavUrl, username: webdavUsername, password: webdavPassword, path: webdavPath }
@@ -101,7 +99,16 @@ export default function SettingsPage() {
 
   const handleSaveAi = async () => {
     setLoading(true)
-    const encryptedKey = aiApiKey ? await encryptUserSecret(user!.id, aiApiKey) : ""
+    let encryptedKey = ""
+    if (aiApiKey) {
+      try {
+        encryptedKey = await encryptUserSecret(user!.id, aiApiKey)
+      } catch (err: any) {
+        toast.error(err.message)
+        setLoading(false)
+        return
+      }
+    }
     const payload: Record<string, any> = {
       user_id: user!.id,
       ai_provider: aiProvider,
@@ -115,9 +122,9 @@ export default function SettingsPage() {
     if (!error && data) {
       setSettingsId(data.id)
       await supabase.from("user_settings").delete().neq("id", data.id).eq("user_id", user!.id)
-      toast.success("保存成功")
+      toast.success("淇濆瓨鎴愬姛")
     } else {
-      toast.error("保存失败")
+      toast.error("淇濆瓨澶辫触")
     }
     setLoading(false)
   }
@@ -139,27 +146,27 @@ export default function SettingsPage() {
       })
       const data = await res.json()
       if (data.ok) {
-        toast.success("连接成功！" + (data.message ? ` AI 回复：${data.message}` : ""))
+        toast.success("杩炴帴鎴愬姛锛? + (data.message ? ` AI 鍥炲锛?{data.message}` : ""))
       } else {
-        toast.error("连接失败：" + data.error)
+        toast.error("杩炴帴澶辫触锛? + data.error)
       }
     } catch (err: any) {
-      toast.error("请求失败：" + err.message)
+      toast.error("璇锋眰澶辫触锛? + err.message)
     }
     setTesting(false)
   }
 
   const handleChangePassword = async () => {
     if (!pwCurrent || !pwNew || !pwConfirm) {
-      toast.error("请填写完整")
+      toast.error("璇峰～鍐欏畬鏁?)
       return
     }
     if (pwNew.length < 6) {
-      toast.error("新密码至少 6 位")
+      toast.error("鏂板瘑鐮佽嚦灏?6 浣?)
       return
     }
     if (pwNew !== pwConfirm) {
-      toast.error("两次密码不一致")
+      toast.error("涓ゆ瀵嗙爜涓嶄竴鑷?)
       return
     }
     setPwLoading(true)
@@ -168,7 +175,7 @@ export default function SettingsPage() {
       password: pwCurrent,
     })
     if (signInError) {
-      toast.error("当前密码错误")
+      toast.error("褰撳墠瀵嗙爜閿欒")
       setPwLoading(false)
       return
     }
@@ -176,7 +183,37 @@ export default function SettingsPage() {
     if (error) {
       toast.error(error.message)
     } else {
+      // Read and decrypt with old key before switching
+      let decryptedAiKey = ""
+      let decryptedWebdavPw = ""
+      try {
+        const { data: settings } = await supabase.from("user_settings").select("id, ai_api_key, webdav_password").eq("user_id", user!.id).limit(1).single()
+        if (settings) {
+          if (settings.ai_api_key) {
+            const d = await decryptUserSecret(user!.id, settings.ai_api_key)
+            if (d) decryptedAiKey = d
+          }
+          if (settings.webdav_password) {
+            const d = await decryptUserSecret(user!.id, settings.webdav_password)
+            if (d) decryptedWebdavPw = d
+          }
+        }
+      } catch {}
+
       storeSessionKey(pwNew)
+
+      // Re-encrypt with new key and update
+      try {
+        const { data: settings } = await supabase.from("user_settings").select("id").eq("user_id", user!.id).limit(1).single()
+        if (settings) {
+          const updatePayload: Record<string, string> = {}
+          if (decryptedAiKey) updatePayload.ai_api_key = await encryptUserSecret(user!.id, decryptedAiKey)
+          if (decryptedWebdavPw) updatePayload.webdav_password = await encryptUserSecret(user!.id, decryptedWebdavPw)
+          if (Object.keys(updatePayload).length > 0) {
+            await supabase.from("user_settings").update(updatePayload).eq("id", settings.id)
+          }
+        }
+      } catch {}
       toast.success("密码已修改")
       setPwCurrent("")
       setPwNew("")
@@ -186,9 +223,31 @@ export default function SettingsPage() {
   }
 
   const handleSaveWebDAV = async () => {
-    const encryptedPw = webdavPassword ? await encryptUserSecret(user!.id, webdavPassword) : ""
-    saveWebDAVConfig({ url: webdavUrl, username: webdavUsername, password: encryptedPw, path: webdavPath })
-    toast.success("WebDAV 配置已保存")
+    let encryptedPw = ""
+    if (webdavPassword) {
+      try {
+        encryptedPw = await encryptUserSecret(user!.id, webdavPassword)
+      } catch (err: any) {
+        toast.error(err.message)
+        return
+      }
+    }
+    const payload: Record<string, any> = {
+      user_id: user!.id,
+      webdav_url: webdavUrl,
+      webdav_username: webdavUsername,
+      webdav_password: encryptedPw,
+      webdav_path: webdavPath,
+    }
+    if (settingsId) payload.id = settingsId
+    const { data, error } = await supabase.from("user_settings").upsert(payload).select().single()
+    if (!error && data) {
+      setSettingsId(data.id)
+      await supabase.from("user_settings").delete().neq("id", data.id).eq("user_id", user!.id)
+      toast.success("WebDAV 配置已保存")
+    } else {
+      toast.error("保存失败")
+    }
   }
 
   function isInsecureHttp(url: string): boolean {
@@ -197,26 +256,26 @@ export default function SettingsPage() {
 
   const handleTestWebDAV = async () => {
     if (isInsecureHttp(webdavUrl)) {
-      toast.error("WebDAV 地址请使用 HTTPS 加密连接")
+      toast.error("WebDAV 鍦板潃璇蜂娇鐢?HTTPS 鍔犲瘑杩炴帴")
       return
     }
     setWebdavTesting(true)
     const result = await testWebDAVConnection({ url: webdavUrl, username: webdavUsername, password: webdavPassword, path: webdavPath })
     if (result.ok) {
-      toast.success("WebDAV 连接成功")
+      toast.success("WebDAV 杩炴帴鎴愬姛")
     } else {
-      toast.error("连接失败：" + (result.error || "未知错误"))
+      toast.error("杩炴帴澶辫触锛? + (result.error || "鏈煡閿欒"))
     }
     setWebdavTesting(false)
   }
 
   const handleSyncUpload = async () => {
     if (!webdavUrl || !webdavUsername || !webdavPassword) {
-      toast.error("请先填写 WebDAV 配置")
+      toast.error("璇峰厛濉啓 WebDAV 閰嶇疆")
       return
     }
     if (isInsecureHttp(webdavUrl)) {
-      toast.error("WebDAV 地址请使用 HTTPS 加密连接")
+      toast.error("WebDAV 鍦板潃璇蜂娇鐢?HTTPS 鍔犲瘑杩炴帴")
       return
     }
     setWebdavSyncing(true)
@@ -227,20 +286,20 @@ export default function SettingsPage() {
       const nowStr = new Date().toISOString()
       localStorage.setItem("expense_tracker__last_sync", nowStr)
       setLastSync(nowStr)
-      toast.success("数据已同步到 WebDAV")
+      toast.success("鏁版嵁宸插悓姝ュ埌 WebDAV")
     } else {
-      toast.error("同步失败：" + (result.error || "未知错误"))
+      toast.error("鍚屾澶辫触锛? + (result.error || "鏈煡閿欒"))
     }
     setWebdavSyncing(false)
   }
 
   const handleSyncDownload = async () => {
     if (!webdavUrl || !webdavUsername || !webdavPassword) {
-      toast.error("请先填写 WebDAV 配置")
+      toast.error("璇峰厛濉啓 WebDAV 閰嶇疆")
       return
     }
     if (isInsecureHttp(webdavUrl)) {
-      toast.error("WebDAV 地址请使用 HTTPS 加密连接")
+      toast.error("WebDAV 鍦板潃璇蜂娇鐢?HTTPS 鍔犲瘑杩炴帴")
       return
     }
     setWebdavRestoring(true)
@@ -249,12 +308,12 @@ export default function SettingsPage() {
     if (result.ok && result.data) {
       const importResult = await importSupabaseData(user!.id, result.data)
       if (importResult.ok) {
-        toast.success("数据已从 WebDAV 恢复")
+        toast.success("鏁版嵁宸蹭粠 WebDAV 鎭㈠")
       } else {
-        toast.error(importResult.error || "数据恢复失败")
+        toast.error(importResult.error || "鏁版嵁鎭㈠澶辫触")
       }
     } else {
-      toast.error("下载失败：" + (result.error || "未知错误"))
+      toast.error("涓嬭浇澶辫触锛? + (result.error || "鏈煡閿欒"))
     }
     setWebdavRestoring(false)
   }
@@ -268,24 +327,23 @@ export default function SettingsPage() {
       .order("date", { ascending: false })
 
     if (!txData || txData.length === 0) {
-      toast.error("暂无数据可导出")
+      toast.error("鏆傛棤鏁版嵁鍙鍑?)
       return
     }
 
-    const headers = "日期,类型,分类,账户,金额,备注\n"
+    const headers = "鏃ユ湡,绫诲瀷,鍒嗙被,璐︽埛,閲戦,澶囨敞\n"
     const rows = (txData as any[]).map((t: any) =>
-      `${t.date},${t.type === "income" ? "收入" : "支出"},${t.categories?.name ?? ""},${t.accounts?.name ?? ""},${t.amount},"${t.description ?? ""}"`
+      `${t.date},${t.type === "income" ? "鏀跺叆" : "鏀嚭"},${t.categories?.name ?? ""},${t.accounts?.name ?? ""},${t.amount},"${t.description ?? ""}"`
     ).join("\n")
     const blob = new Blob(["\uFEFF" + headers + rows], { type: "text/csv;charset=utf-8" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `账小记_${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `璐﹀皬璁癬${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
     URL.revokeObjectURL(url)
-    toast.success("导出成功")
+    toast.success("瀵煎嚭鎴愬姛")
   }
-
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-2xl">
       <h1 className="text-2xl font-bold">设置</h1>
@@ -299,7 +357,7 @@ export default function SettingsPage() {
             { href: "/bills", label: "提醒", icon: Bell, desc: "管理账单提醒" },
           ].map((item, i) => (
             <Link key={item.href} href={item.href}>
-              <div className={`flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors ${i > 0 ? "" : ""}`}>
+              <div className={lex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors }>
                 <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                   <item.icon className="w-4.5 h-4.5 text-primary" />
                 </div>
@@ -315,212 +373,221 @@ export default function SettingsPage() {
       </Card>
 
       <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <User className="w-5 h-5 text-muted-foreground" />
-            <CardTitle className="text-base">账户信息</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">邮箱</span>
-            <span>{user?.email}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">用户 ID</span>
-            <span className="font-mono text-xs">{user?.id?.slice(0, 12)}...</span>
-          </div>
-        </CardContent>
-      </Card>
+        <Accordion type="multiple" className="w-full border-0">
+          <AccordionItem value="account" className="border-0">
+            <AccordionTrigger className="hover:no-underline py-4 px-0">
+              <div className="flex items-center gap-2">
+                <User className="w-5 h-5 text-muted-foreground" />
+                <span className="text-base font-semibold">账户信息</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-3 pt-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">邮箱</span>
+                  <span>{user?.email}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">用户 ID</span>
+                  <span className="font-mono text-xs">{user?.id?.slice(0, 12)}...</span>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Sun className="w-5 h-5 text-muted-foreground" />
-            <CardTitle className="text-base">外观</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            <Button variant={theme === "light" ? "default" : "outline"} size="sm" onClick={() => setTheme("light")}>
-              <Sun className="w-4 h-4 mr-1" /> 浅色
-            </Button>
-            <Button variant={theme === "dark" ? "default" : "outline"} size="sm" onClick={() => setTheme("dark")}>
-              <Moon className="w-4 h-4 mr-1" /> 深色
-            </Button>
-            <Button variant={theme === "system" ? "default" : "outline"} size="sm" onClick={() => setTheme("system")}>
-              <Monitor className="w-4 h-4 mr-1" /> 跟随系统
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          <AccordionItem value="appearance" className="border-0 border-t">
+            <AccordionTrigger className="hover:no-underline py-4 px-0">
+              <div className="flex items-center gap-2">
+                <Sun className="w-5 h-5 text-muted-foreground" />
+                <span className="text-base font-semibold">外观</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="flex gap-2 pt-2">
+                <Button variant={theme === "light" ? "default" : "outline"} size="sm" onClick={() => setTheme("light")}>
+                  <Sun className="w-4 h-4 mr-1" /> 浅色
+                </Button>
+                <Button variant={theme === "dark" ? "default" : "outline"} size="sm" onClick={() => setTheme("dark")}>
+                  <Moon className="w-4 h-4 mr-1" /> 深色
+                </Button>
+                <Button variant={theme === "system" ? "default" : "outline"} size="sm" onClick={() => setTheme("system")}>
+                  <Monitor className="w-4 h-4 mr-1" /> 跟随系统
+                </Button>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-muted-foreground" />
-            <CardTitle className="text-base">AI 配置</CardTitle>
-            <CardDescription className="ml-2">AI 记账功能需要配置 API Key</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>AI 提供商</Label>
-            <Select value={aiProvider} onValueChange={setAiProvider}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="openai">OpenAI</SelectItem>
-                <SelectItem value="deepseek">DeepSeek</SelectItem>
-                <SelectItem value="custom">自定义(中转站)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>API 中转地址 (Base URL)</Label>
-            <Input value={aiBaseUrl} onChange={e => setAiBaseUrl(e.target.value)}
-              placeholder={aiProvider === "deepseek" ? "https://api.deepseek.com" : aiProvider === "openai" ? "https://api.openai.com" : "https://your-proxy.com/v1"} />
-            <p className="text-xs text-muted-foreground">留空使用官方地址，填入中转站地址即可通过中转站调用</p>
-          </div>
-          <div className="space-y-2">
-            <Label>模型</Label>
-            <Input value={aiModel} onChange={e => setAiModel(e.target.value)}
-              placeholder={aiProvider === "deepseek" ? "deepseek-chat" : "gpt-4o-mini"} />
-          </div>
-          <div className="space-y-2">
-            <Label>API Key</Label>
-            <Input type="password" value={aiApiKey} onChange={e => setAiApiKey(e.target.value)}
-              placeholder="sk-..." />
-            <p className="text-xs text-muted-foreground">API Key 加密存储，仅用于 AI 记账请求</p>
-          </div>
-          <div className="flex gap-2">
-            <Button className="flex-1" onClick={handleSaveAi} disabled={loading}>{loading ? "保存中..." : "保存 AI 配置"}</Button>
-            <Button variant="outline" onClick={handleTest} disabled={testing || !aiApiKey}>
-              {testing ? "测试中..." : <><PlugIcon className="w-4 h-4 mr-1" />测试连接</>}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          <AccordionItem value="ai" className="border-0 border-t">
+            <AccordionTrigger className="hover:no-underline py-4 px-0">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-muted-foreground" />
+                <span className="text-base font-semibold">AI 配置</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label>AI 提供商</Label>
+                  <Select value={aiProvider} onValueChange={setAiProvider}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="openai">OpenAI</SelectItem>
+                      <SelectItem value="deepseek">DeepSeek</SelectItem>
+                      <SelectItem value="custom">自定义中转站</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>API 中转地址 (Base URL)</Label>
+                  <Input value={aiBaseUrl} onChange={e => setAiBaseUrl(e.target.value)}
+                    placeholder={aiProvider === "deepseek" ? "https://api.deepseek.com" : aiProvider === "openai" ? "https://api.openai.com" : "https://your-proxy.com/v1"} />
+                  <p className="text-xs text-muted-foreground">留空使用官方地址，填写中转站地址即可通过中转站调用</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>模型</Label>
+                  <Input value={aiModel} onChange={e => setAiModel(e.target.value)}
+                    placeholder={aiProvider === "deepseek" ? "deepseek-chat" : "gpt-4o-mini"} />
+                </div>
+                <div className="space-y-2">
+                  <Label>API Key</Label>
+                  <Input type="password" value={aiApiKey} onChange={e => setAiApiKey(e.target.value)}
+                    placeholder="sk-..." />
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={handleSaveAi} disabled={loading}>{loading ? "保存中..." : "保存 AI 配置"}</Button>
+                  <Button variant="outline" onClick={handleTest} disabled={testing || !aiApiKey}>
+                    {testing ? "测试中..." : "测试连接"}
+                  </Button>
+                </div>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Download className="w-5 h-5 text-muted-foreground" />
-            <CardTitle className="text-base">数据管理</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="w-4 h-4 mr-1" /> 导出 CSV
-          </Button>
-        </CardContent>
-      </Card>
+          <AccordionItem value="data" className="border-0 border-t">
+            <AccordionTrigger className="hover:no-underline py-4 px-0">
+              <div className="flex items-center gap-2">
+                <Download className="w-5 h-5 text-muted-foreground" />
+                <span className="text-base font-semibold">数据管理</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Button variant="outline" onClick={handleExport}>
+                <Download className="w-4 h-4 mr-1" /> 导出 CSV
+              </Button>
+            </AccordionContent>
+          </AccordionItem>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Cloud className="w-5 h-5 text-muted-foreground" />
-            <CardTitle className="text-base">WebDAV 同步</CardTitle>
-            <CardDescription className="ml-2">通过 WebDAV 备份和恢复数据</CardDescription>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>WebDAV 地址</Label>
-            <Input value={webdavUrl} onChange={e => setWebdavUrl(e.target.value)}
-              placeholder="https://example.com/remote.php/dav/files/username" />
-            {webdavIsHttp && (
-              <p className="text-xs text-destructive flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" />当前使用 HTTP，密码将以明文传输，建议改用 HTTPS
-              </p>
-            )}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label>用户名</Label>
-              <Input value={webdavUsername} onChange={e => setWebdavUsername(e.target.value)}
-                placeholder="username" />
-            </div>
-            <div className="space-y-2">
-              <Label>密码</Label>
-              <Input type="password" value={webdavPassword} onChange={e => setWebdavPassword(e.target.value)}
-                placeholder="password" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>远程路径 (可选)</Label>
-            <Input value={webdavPath} onChange={e => setWebdavPath(e.target.value)}
-              placeholder="apps/账小记" />
-            <p className="text-xs text-muted-foreground">文件将保存到此路径下，留空使用根目录</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={handleSaveWebDAV}>保存配置</Button>
-            <Button variant="outline" size="sm" onClick={handleTestWebDAV} disabled={webdavTesting || !webdavUrl}>
-              {webdavTesting ? "测试中..." : <><PlugIcon className="w-4 h-4 mr-1" />测试连接</>}
-            </Button>
-          </div>
-          <Separator />
-          <div className="flex items-center justify-between">
-            <Label className="text-sm">自动同步</Label>
-            <Switch checked={autoSync} onCheckedChange={setAutoSync} disabled={!webdavUrl || !webdavUsername || !webdavPassword} />
-          </div>
-          <div className="flex items-center gap-2 -mt-2">
-            <Input type="number" min={5} max={1440} value={syncInterval} onChange={e => setSyncInterval(parseInt(e.target.value, 10) || 30)} disabled={!autoSync} className="w-20 h-8 text-sm" />
-            <span className="text-xs text-muted-foreground">分钟同步一次</span>
-          </div>
-          <Separator />
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={handleSyncUpload} disabled={webdavSyncing || !webdavUrl}>
-              {webdavSyncing ? <>同步中...</> : <><Upload className="w-4 h-4 mr-1" />上传同步</>}
-            </Button>
-            <Button variant="secondary" onClick={handleSyncDownload} disabled={webdavRestoring || !webdavUrl}>
-              {webdavRestoring ? <>恢复中...</> : <><Download className="w-4 h-4 mr-1" />下载恢复</>}
-            </Button>
-          </div>
-          {lastSync && (
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <CheckCircle className="w-3 h-3" />
-              上次同步：{new Date(lastSync).toLocaleString("zh-CN")}
-            </p>
-          )}
-        </CardContent>
-      </Card>
+          <AccordionItem value="webdav" className="border-0 border-t">
+            <AccordionTrigger className="hover:no-underline py-4 px-0">
+              <div className="flex items-center gap-2">
+                <Cloud className="w-5 h-5 text-muted-foreground" />
+                <span className="text-base font-semibold">WebDAV 同步</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label>WebDAV 地址</Label>
+                  <Input value={webdavUrl} onChange={e => setWebdavUrl(e.target.value)}
+                    placeholder="https://example.com/remote.php/dav/files/username" />
+                  {webdavIsHttp && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" />当前使用 HTTP，密码将以明文传输，建议改用 HTTPS
+                    </p>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label>用户名</Label>
+                    <Input value={webdavUsername} onChange={e => setWebdavUsername(e.target.value)}
+                      placeholder="username" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>密码</Label>
+                    <Input type="password" value={webdavPassword} onChange={e => setWebdavPassword(e.target.value)}
+                      placeholder="password" />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>远程路径 (可选)</Label>
+                  <Input value={webdavPath} onChange={e => setWebdavPath(e.target.value)}
+                    placeholder="apps/账小记" />
+                  <p className="text-xs text-muted-foreground">文件将保存到此路径下，留空使用根目录</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" size="sm" onClick={handleSaveWebDAV}>保存配置</Button>
+                  <Button variant="outline" size="sm" onClick={handleTestWebDAV} disabled={webdavTesting || !webdavUrl}>
+                    {webdavTesting ? "测试中..." : <><PlugIcon className="w-4 h-4 mr-1" />测试连接</>}
+                  </Button>
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm">自动同步</Label>
+                  <Switch checked={autoSync} onCheckedChange={setAutoSync} disabled={!webdavUrl || !webdavUsername || !webdavPassword} />
+                </div>
+                <div className="flex items-center gap-2 -mt-2">
+                  <Input type="number" min={5} max={1440} value={syncInterval} onChange={e => setSyncInterval(parseInt(e.target.value, 10) || 30)} disabled={!autoSync} className="w-20 h-8 text-sm" />
+                  <span className="text-xs text-muted-foreground">分钟同步一次</span>
+                </div>
+                <Separator />
+                <div className="flex flex-wrap gap-2">
+                  <Button onClick={handleSyncUpload} disabled={webdavSyncing || !webdavUrl}>
+                    {webdavSyncing ? <>同步中...</> : <><Upload className="w-4 h-4 mr-1" />上传同步</>}
+                  </Button>
+                  <Button variant="secondary" onClick={handleSyncDownload} disabled={webdavRestoring || !webdavUrl}>
+                    {webdavRestoring ? <>恢复中...</> : <><Download className="w-4 h-4 mr-1" />下载恢复</>}
+                  </Button>
+                </div>
+                {lastSync && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3" />
+                    上次同步：{new Date(lastSync).toLocaleString("zh-CN")}
+                  </p>
+                )}
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <KeyRound className="w-5 h-5 text-muted-foreground" />
-            <CardTitle className="text-base">修改密码</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>当前密码</Label>
-            <Input type="password" value={pwCurrent} onChange={e => setPwCurrent(e.target.value)} placeholder="输入当前密码" />
-          </div>
-          <div className="space-y-2">
-            <Label>新密码</Label>
-            <Input type="password" value={pwNew} onChange={e => setPwNew(e.target.value)} placeholder="至少 6 位" />
-          </div>
-          <div className="space-y-2">
-            <Label>确认新密码</Label>
-            <Input type="password" value={pwConfirm} onChange={e => setPwConfirm(e.target.value)} placeholder="再次输入新密码" />
-          </div>
-          <Button onClick={handleChangePassword} disabled={pwLoading}>
-            {pwLoading ? "修改中..." : "修改密码"}
-          </Button>
-        </CardContent>
-      </Card>
+          <AccordionItem value="password" className="border-0 border-t">
+            <AccordionTrigger className="hover:no-underline py-4 px-0">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-muted-foreground" />
+                <span className="text-base font-semibold">修改密码</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label>当前密码</Label>
+                  <Input type="password" value={pwCurrent} onChange={e => setPwCurrent(e.target.value)} placeholder="输入当前密码" />
+                </div>
+                <div className="space-y-2">
+                  <Label>新密码</Label>
+                  <Input type="password" value={pwNew} onChange={e => setPwNew(e.target.value)} placeholder="至少 6 位" />
+                </div>
+                <div className="space-y-2">
+                  <Label>确认新密码</Label>
+                  <Input type="password" value={pwConfirm} onChange={e => setPwConfirm(e.target.value)} placeholder="再次输入新密码" />
+                </div>
+                <Button onClick={handleChangePassword} disabled={pwLoading}>
+                  {pwLoading ? "修改中..." : "修改密码"}
+                </Button>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
 
-      <Card className="border-destructive/30">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            <Shield className="w-5 h-5 text-destructive" />
-            <CardTitle className="text-base text-destructive">危险操作</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Button variant="destructive" onClick={signOut}>退出登录</Button>
-        </CardContent>
+          <AccordionItem value="danger" className="border-0 border-t">
+            <AccordionTrigger className="hover:no-underline py-4 px-0 text-destructive">
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                <span className="text-base font-semibold">危险操作</span>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Button variant="destructive" onClick={signOut}>退出登录</Button>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </Card>
     </div>
   )

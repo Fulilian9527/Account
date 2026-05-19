@@ -182,6 +182,11 @@ export interface Database {
           theme: "light" | "dark" | "system"
           currency: string
           updated_at: string
+          ai_base_url: string
+          webdav_url: string
+          webdav_username: string
+          webdav_password: string
+          webdav_path: string
         }
         Insert: {
           id?: string
@@ -192,6 +197,11 @@ export interface Database {
           theme?: "light" | "dark" | "system"
           currency?: string
           updated_at?: string
+          ai_base_url?: string
+          webdav_url?: string
+          webdav_username?: string
+          webdav_password?: string
+          webdav_path?: string
         }
         Update: {
           id?: string
@@ -202,6 +212,11 @@ export interface Database {
           theme?: "light" | "dark" | "system"
           currency?: string
           updated_at?: string
+          ai_base_url?: string
+          webdav_url?: string
+          webdav_username?: string
+          webdav_password?: string
+          webdav_path?: string
         }
       }
     }

@@ -1,4 +1,4 @@
-const enc = new TextEncoder()
+﻿const enc = new TextEncoder()
 const dec = new TextDecoder()
 
 function b64(buf: ArrayBuffer): string {
@@ -14,7 +14,7 @@ function ub64(s: string): ArrayBuffer {
 
 const EK_SESSION_KEY = "expense_tracker__ek"
 
-export async function deriveSessionKey(password: string): Promise<string> {
+async function deriveSessionKey(password: string): Promise<string> {
   const salt = enc.encode("expense_tracker_session_v1")
   const key = await (crypto.subtle.importKey as any)("raw", enc.encode(password), "PBKDF2", false, ["deriveBits"])
   const bits = await (crypto.subtle.deriveBits as any)({ name: "PBKDF2", salt, iterations: 100000, hash: "SHA-256" }, key, 256)
@@ -36,13 +36,13 @@ export function clearSessionKey() {
   try { sessionStorage.removeItem(EK_SESSION_KEY) } catch {}
 }
 
-function getEffectiveKey(userId: string): string {
+function getEffectiveKey(userId: string): string | null {
   const sk = getSessionKey()
   if (sk) return sk
-  return userId
+  return null
 }
 
-export async function encryptSecret(password: string, plaintext: string): Promise<string> {
+async function encryptSecret(password: string, plaintext: string): Promise<string> {
   const salt = crypto.getRandomValues(new Uint8Array(16)).buffer as ArrayBuffer
   const iv = crypto.getRandomValues(new Uint8Array(12))
   const key = await (crypto.subtle.importKey as any)("raw", enc.encode(password), "PBKDF2", false, ["deriveKey"])
@@ -58,7 +58,7 @@ export async function encryptSecret(password: string, plaintext: string): Promis
   return b64(out.buffer as ArrayBuffer)
 }
 
-export async function decryptSecret(password: string, encoded: string): Promise<string | null> {
+async function decryptSecret(password: string, encoded: string): Promise<string | null> {
   try {
     const raw = new Uint8Array(ub64(encoded))
     const salt = raw.slice(0, 16).buffer as ArrayBuffer
@@ -77,9 +77,13 @@ export async function decryptSecret(password: string, encoded: string): Promise<
 }
 
 export async function encryptUserSecret(userId: string, plaintext: string): Promise<string> {
-  return encryptSecret(getEffectiveKey(userId), plaintext)
+  const key = getEffectiveKey(userId)
+  if (!key) throw new Error("需要登录密码才能加密数据")
+  return encryptSecret(key, plaintext)
 }
 
 export async function decryptUserSecret(userId: string, encoded: string): Promise<string | null> {
-  return decryptSecret(getEffectiveKey(userId), encoded)
+  const key = getEffectiveKey(userId)
+  if (!key) return null
+  return decryptSecret(key, encoded)
 }

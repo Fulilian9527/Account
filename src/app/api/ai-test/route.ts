@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server"
+﻿import { NextRequest, NextResponse } from "next/server"
+import { getCurrentUser } from "@/lib/supabase/server"
 
 const DEFAULT_URLS: Record<string, string> = {
   openai: "https://api.openai.com",
@@ -6,6 +7,11 @@ const DEFAULT_URLS: Record<string, string> = {
 }
 
 export async function POST(request: NextRequest) {
+  const user = await getCurrentUser()
+  if (!user) {
+    return NextResponse.json({ error: "未登录" }, { status: 401 })
+  }
+
   try {
     const { aiConfig } = await request.json()
 
@@ -27,7 +33,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         model,
-        messages: [{ role: "user", content: "请回复：连接成功" }],
+        messages: [{ role: "user", content: "请回答：连接成功" }],
         temperature: 0.1,
         max_tokens: 20,
       }),

@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,7 @@ import { toast } from "sonner"
 import { createClient } from "@/lib/supabase/client"
 import { format } from "date-fns"
 import type { AiParseResult } from "@/types"
+import { decryptUserSecret } from "@/lib/crypto"
 
 interface AiInputProps {
   categories: any[]
@@ -37,6 +38,12 @@ export function AiInput({ categories, accounts, userId, onSuccess }: AiInputProp
         .eq("user_id", userId)
         .single()
 
+      let decryptedKey = ""
+      if (settings?.ai_api_key) {
+        const decrypted = await decryptUserSecret(userId, settings.ai_api_key)
+        if (decrypted) decryptedKey = decrypted
+      }
+
       const res = await fetch("/api/ai-parse", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -44,7 +51,7 @@ export function AiInput({ categories, accounts, userId, onSuccess }: AiInputProp
           text: text.trim(),
           categories,
           aiConfig: {
-            apiKey: settings?.ai_api_key || "",
+            apiKey: decryptedKey,
             provider: settings?.ai_provider || "openai",
             model: settings?.ai_model || "gpt-4o-mini",
             baseUrl: settings?.ai_base_url || "",

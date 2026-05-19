@@ -1,6 +1,5 @@
-import { createClient } from "@/lib/supabase/client"
+﻿import { createClient } from "@/lib/supabase/client"
 
-const CONFIG_KEY = "expense_tracker__webdav_config"
 
 export interface WebDAVConfig {
   url: string
@@ -9,18 +8,7 @@ export interface WebDAVConfig {
   path: string
 }
 
-export function getWebDAVConfig(): WebDAVConfig | null {
-  try {
-    const raw = localStorage.getItem(CONFIG_KEY)
-    return raw ? JSON.parse(raw) : null
-  } catch {
-    return null
-  }
-}
 
-export function saveWebDAVConfig(config: WebDAVConfig) {
-  localStorage.setItem(CONFIG_KEY, JSON.stringify(config))
-}
 
 function basicAuth(username: string, password: string): string {
   return "Basic " + btoa(`${username}:${password}`)
@@ -43,14 +31,14 @@ export async function testWebDAVConnection(config: WebDAVConfig): Promise<{ ok: 
       },
     })
     if (res.status === 401 || res.status === 403) {
-      return { ok: false, error: "认证失败，请检查用户名和密码" }
+      return { ok: false, error: "璁よ瘉澶辫触锛岃妫€鏌ョ敤鎴峰悕鍜屽瘑鐮? }
     }
     if (!res.ok) {
-      return { ok: false, error: `连接失败 (${res.status})` }
+      return { ok: false, error: `杩炴帴澶辫触 (${res.status})` }
     }
     return { ok: true }
   } catch (err: any) {
-    return { ok: false, error: err.message || "无法连接到服务器" }
+    return { ok: false, error: err.message || "鏃犳硶杩炴帴鍒版湇鍔″櫒" }
   }
 }
 
@@ -58,7 +46,7 @@ const BACKUP_PREFIX = "expense-tracker-backup-"
 const BACKUP_SUFFIX = ".json"
 const MAX_BACKUPS = 10
 
-export function generateBackupFilename(): string {
+function generateBackupFilename(): string {
   const now = new Date()
   const ts = now.getFullYear() +
     String(now.getMonth() + 1).padStart(2, "0") +
@@ -73,7 +61,7 @@ function isBackupFile(name: string): boolean {
   return name.startsWith(BACKUP_PREFIX) && name.endsWith(BACKUP_SUFFIX)
 }
 
-export async function listBackupFiles(config: WebDAVConfig): Promise<{ ok: boolean; files?: { name: string; modified?: string }[]; error?: string }> {
+async function listBackupFiles(config: WebDAVConfig): Promise<{ ok: boolean; files?: { name: string; modified?: string }[]; error?: string }> {
   try {
     const dir = config.path || ""
     const url = buildUrl(config.url, dir)
@@ -85,7 +73,7 @@ export async function listBackupFiles(config: WebDAVConfig): Promise<{ ok: boole
       },
     })
     if (!res.ok) {
-      return { ok: false, error: `列出文件失败 (${res.status})` }
+      return { ok: false, error: `鍒楀嚭鏂囦欢澶辫触 (${res.status})` }
     }
     const text = await res.text()
     const parser = new DOMParser()
@@ -103,11 +91,11 @@ export async function listBackupFiles(config: WebDAVConfig): Promise<{ ok: boole
     }
     return { ok: true, files }
   } catch (err: any) {
-    return { ok: false, error: err.message || "列出文件失败" }
+    return { ok: false, error: err.message || "鍒楀嚭鏂囦欢澶辫触" }
   }
 }
 
-export async function deleteFromWebDAV(config: WebDAVConfig, filename: string): Promise<{ ok: boolean; error?: string }> {
+async function deleteFromWebDAV(config: WebDAVConfig, filename: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const remotePath = (config.path ? config.path.replace(/\/+$/, "") + "/" : "") + filename
     const url = buildUrl(config.url, remotePath)
@@ -118,11 +106,11 @@ export async function deleteFromWebDAV(config: WebDAVConfig, filename: string): 
       },
     })
     if (!res.ok) {
-      return { ok: false, error: `删除失败 (${res.status})` }
+      return { ok: false, error: `鍒犻櫎澶辫触 (${res.status})` }
     }
     return { ok: true }
   } catch (err: any) {
-    return { ok: false, error: err.message || "删除失败" }
+    return { ok: false, error: err.message || "鍒犻櫎澶辫触" }
   }
 }
 
@@ -149,7 +137,7 @@ export async function uploadWithRotation(config: WebDAVConfig, data: string): Pr
   return await uploadToWebDAV(config, filename, data)
 }
 
-export async function uploadToWebDAV(config: WebDAVConfig, filename: string, data: string): Promise<{ ok: boolean; error?: string }> {
+async function uploadToWebDAV(config: WebDAVConfig, filename: string, data: string): Promise<{ ok: boolean; error?: string }> {
   try {
     const remotePath = (config.path ? config.path.replace(/\/+$/, "") + "/" : "") + filename
     const url = buildUrl(config.url, remotePath)
@@ -162,11 +150,11 @@ export async function uploadToWebDAV(config: WebDAVConfig, filename: string, dat
       body: data,
     })
     if (!res.ok) {
-      return { ok: false, error: `上传失败 (${res.status})` }
+      return { ok: false, error: `涓婁紶澶辫触 (${res.status})` }
     }
     return { ok: true }
   } catch (err: any) {
-    return { ok: false, error: err.message || "上传失败" }
+    return { ok: false, error: err.message || "涓婁紶澶辫触" }
   }
 }
 
@@ -177,7 +165,7 @@ export async function downloadLatestBackup(config: WebDAVConfig): Promise<{ ok: 
   }
   const files = listResult.files || []
   if (files.length === 0) {
-    return { ok: false, error: "远程没有备份文件" }
+    return { ok: false, error: "杩滅▼娌℃湁澶囦唤鏂囦欢" }
   }
   files.sort((a, b) => {
     const da = a.modified ? new Date(a.modified).getTime() : 0
@@ -187,7 +175,7 @@ export async function downloadLatestBackup(config: WebDAVConfig): Promise<{ ok: 
   return await downloadFromWebDAV(config, files[0].name)
 }
 
-export async function downloadFromWebDAV(config: WebDAVConfig, filename: string): Promise<{ ok: boolean; data?: string; error?: string }> {
+async function downloadFromWebDAV(config: WebDAVConfig, filename: string): Promise<{ ok: boolean; data?: string; error?: string }> {
   try {
     const remotePath = (config.path ? config.path.replace(/\/+$/, "") + "/" : "") + filename
     const url = buildUrl(config.url, remotePath)
@@ -198,15 +186,15 @@ export async function downloadFromWebDAV(config: WebDAVConfig, filename: string)
       },
     })
     if (res.status === 404) {
-      return { ok: false, error: "远程文件不存在" }
+      return { ok: false, error: "杩滅▼鏂囦欢涓嶅瓨鍦? }
     }
     if (!res.ok) {
-      return { ok: false, error: `下载失败 (${res.status})` }
+      return { ok: false, error: `涓嬭浇澶辫触 (${res.status})` }
     }
     const text = await res.text()
     return { ok: true, data: text }
   } catch (err: any) {
-    return { ok: false, error: err.message || "下载失败" }
+    return { ok: false, error: err.message || "涓嬭浇澶辫触" }
   }
 }
 
@@ -241,12 +229,12 @@ export async function importSupabaseData(userId: string, jsonStr: string): Promi
       await supabase.from(table).delete().eq("user_id", userId)
       const { error } = await supabase.from(table).insert(ownRows)
       if (error) {
-        return { ok: false, error: `${table} 恢复失败: ${error.message}` }
+        return { ok: false, error: `${table} 鎭㈠澶辫触: ${error.message}` }
       }
     }
 
     return { ok: true }
   } catch (err: any) {
-    return { ok: false, error: "数据解析失败：" + err.message }
+    return { ok: false, error: "鏁版嵁瑙ｆ瀽澶辫触锛? + err.message }
   }
 }

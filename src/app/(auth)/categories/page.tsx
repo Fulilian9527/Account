@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useEffect, useState, useCallback } from "react"
 import { createClient } from "@/lib/supabase/client"
@@ -10,29 +10,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { Plus, Trash2, GripVertical } from "lucide-react"
+import { Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
-const ICONS = ["🍔", "🛒", "🚗", "🏠", "🎮", "👕", "📱", "✈️", "📚", "💊", "🎬", "🏋️", "🐱", "💇", "🎁", "💰", "💼", "📦", "🏥", "☕"]
+const ICONS = ["馃崝", "馃洅", "馃殫", "馃彔", "馃幃", "馃憰", "馃摫", "鉁堬笍", "馃摎", "馃拪", "馃幀", "馃弸锔?, "馃惐", "馃拠", "馃巵", "馃挵", "馃捈", "馃摝", "馃彞", "鈽?]
 
 const COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6", "#6366f1"]
 
 const DEFAULT_EXPENSE = [
-  { name: "餐饮", icon: "🍔", color: "#ef4444" },
-  { name: "购物", icon: "🛒", color: "#f97316" },
-  { name: "交通", icon: "🚗", color: "#eab308" },
-  { name: "居住", icon: "🏠", color: "#06b6d4" },
-  { name: "娱乐", icon: "🎮", color: "#8b5cf6" },
-  { name: "服饰", icon: "👕", color: "#ec4899" },
-  { name: "数码", icon: "📱", color: "#3b82f6" },
-  { name: "医疗", icon: "💊", color: "#22c55e" },
+  { name: "椁愰ギ", icon: "馃崝", color: "#ef4444" },
+  { name: "璐墿", icon: "馃洅", color: "#f97316" },
+  { name: "浜ら€?, icon: "馃殫", color: "#eab308" },
+  { name: "灞呬綇", icon: "馃彔", color: "#06b6d4" },
+  { name: "濞变箰", icon: "馃幃", color: "#8b5cf6" },
+  { name: "鏈嶉グ", icon: "馃憰", color: "#ec4899" },
+  { name: "鏁扮爜", icon: "馃摫", color: "#3b82f6" },
+  { name: "鍖荤枟", icon: "馃拪", color: "#22c55e" },
 ]
 
 const DEFAULT_INCOME = [
-  { name: "工资", icon: "💰", color: "#22c55e" },
-  { name: "兼职", icon: "💼", color: "#06b6d4" },
-  { name: "投资", icon: "📈", color: "#8b5cf6" },
-  { name: "红包", icon: "🧧", color: "#ef4444" },
+  { name: "宸ヨ祫", icon: "馃挵", color: "#22c55e" },
+  { name: "鍏艰亴", icon: "馃捈", color: "#06b6d4" },
+  { name: "鎶曡祫", icon: "馃搱", color: "#8b5cf6" },
+  { name: "绾㈠寘", icon: "馃Ё", color: "#ef4444" },
 ]
 
 export default function CategoriesPage() {
@@ -41,7 +41,7 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
-  const [form, setForm] = useState({ name: "", icon: "📄", color: "#3b82f6", type: "expense" as "income" | "expense" })
+  const [form, setForm] = useState({ name: "", icon: "馃搫", color: "#3b82f6", type: "expense" as "income" | "expense" })
 
   const fetchData = useCallback(async () => {
     if (!user) return
@@ -63,18 +63,18 @@ export default function CategoriesPage() {
       type: form.type,
       sort_order: maxOrder,
     })
-    if (error) { toast.error("添加失败") } else {
-      toast.success("添加成功")
+    if (error) { toast.error("娣诲姞澶辫触") } else {
+      toast.success("娣诲姞鎴愬姛")
       setShowAdd(false)
-      setForm({ name: "", icon: "📄", color: "#3b82f6", type: "expense" })
+      setForm({ name: "", icon: "馃搫", color: "#3b82f6", type: "expense" })
       fetchData()
     }
   }
 
   const handleDelete = async (id: string) => {
     const { error } = await supabase.from("categories").delete().eq("id", id)
-    if (error) { toast.error("删除失败") } else {
-      toast.success("已删除")
+    if (error) { toast.error("鍒犻櫎澶辫触") } else {
+      toast.success("宸插垹闄?)
       fetchData()
     }
   }
@@ -87,29 +87,29 @@ export default function CategoriesPage() {
   return (
     <div className="p-4 md:p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">分类管理</h1>
+        <h1 className="text-2xl font-bold">鍒嗙被绠＄悊</h1>
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
           <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4" /> 添加分类</Button>
+            <Button><Plus className="w-4 h-4" /> 娣诲姞鍒嗙被</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>添加分类</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>娣诲姞鍒嗙被</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>类型</Label>
+                <Label>绫诲瀷</Label>
                 <Tabs value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v as "income" | "expense" }))}>
                   <TabsList className="w-full">
-                    <TabsTrigger value="expense" className="flex-1">支出</TabsTrigger>
-                    <TabsTrigger value="income" className="flex-1">收入</TabsTrigger>
+                    <TabsTrigger value="expense" className="flex-1">鏀嚭</TabsTrigger>
+                    <TabsTrigger value="income" className="flex-1">鏀跺叆</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
               <div className="space-y-2">
-                <Label>名称</Label>
+                <Label>鍚嶇О</Label>
                 <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <Label>图标</Label>
+                <Label>鍥炬爣</Label>
                 <div className="flex flex-wrap gap-2">
                   {ICONS.map(icon => (
                     <button key={icon} type="button" onClick={() => setForm(f => ({ ...f, icon }))}
@@ -119,7 +119,7 @@ export default function CategoriesPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>颜色</Label>
+                <Label>棰滆壊</Label>
                 <div className="flex flex-wrap gap-2">
                   {COLORS.map(color => (
                     <button key={color} type="button" onClick={() => setForm(f => ({ ...f, color }))}
@@ -131,8 +131,8 @@ export default function CategoriesPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAdd(false)}>取消</Button>
-              <Button onClick={handleAdd}>添加</Button>
+              <Button variant="outline" onClick={() => setShowAdd(false)}>鍙栨秷</Button>
+              <Button onClick={handleAdd}>娣诲姞</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -140,8 +140,8 @@ export default function CategoriesPage() {
 
       <Tabs defaultValue="expense">
         <TabsList>
-          <TabsTrigger value="expense">支出分类 ({expenseCats.length})</TabsTrigger>
-          <TabsTrigger value="income">收入分类 ({incomeCats.length})</TabsTrigger>
+          <TabsTrigger value="expense">鏀嚭鍒嗙被 ({expenseCats.length})</TabsTrigger>
+          <TabsTrigger value="income">鏀跺叆鍒嗙被 ({incomeCats.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="expense" className="grid gap-3 grid-cols-2 md:grid-cols-4">
           {expenseCats.map(c => (
