@@ -329,15 +329,15 @@ export default function SettingsPage() {
       return
     }
 
-    const headers = "鏃ユ湡,绫诲瀷,鍒嗙被,璐︽埛,閲戦,澶囨敞\n"
+    const headers = "日期,类型,分类,账户,金额,备注\n"
     const rows = (txData as any[]).map((t: any) =>
-      `${t.date},${t.type === "income" ? "鏀跺叆" : "鏀嚭"},${t.categories?.name ?? ""},${t.accounts?.name ?? ""},${t.amount},"${t.description ?? ""}"`
+      `${t.date},${t.type === "income" ? "收入" : "支出"},${t.categories?.name ?? ""},${t.accounts?.name ?? ""},${t.amount},"${t.description ?? ""}"`
     ).join("\n")
     const blob = new Blob(["\uFEFF" + headers + rows], { type: "text/csv;charset=utf-8" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `璐﹀皬璁癬${new Date().toISOString().slice(0, 10)}.csv`
+    a.download = `账小记_${new Date().toISOString().slice(0, 10)}.csv`
     a.click()
     URL.revokeObjectURL(url)
     toast.success("导出成功")
@@ -355,7 +355,7 @@ export default function SettingsPage() {
             { href: "/bills", label: "提醒", icon: Bell, desc: "管理账单提醒" },
           ].map((item, i) => (
             <Link key={item.href} href={item.href}>
-              <div className={lex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors }>
+              <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-accent transition-colors">
                 <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
                   <item.icon className="w-4.5 h-4.5 text-primary" />
                 </div>

@@ -31,14 +31,14 @@ export async function testWebDAVConnection(config: WebDAVConfig): Promise<{ ok: 
       },
     })
     if (res.status === 401 || res.status === 403) {
-      return { ok: false, error: "璁よ瘉澶辫触锛岃妫€鏌ョ敤鎴峰悕鍜屽瘑鐮? }
+      return { ok: false, error: "认证失败，请检查用户名和密码" }
     }
     if (!res.ok) {
       return { ok: false, error: `杩炴帴澶辫触 (${res.status})` }
     }
     return { ok: true }
   } catch (err: any) {
-    return { ok: false, error: err.message || "鏃犳硶杩炴帴鍒版湇鍔″櫒" }
+    return { ok: false, error: err.message || "无法连接到服务器" }
   }
 }
 
@@ -73,7 +73,7 @@ async function listBackupFiles(config: WebDAVConfig): Promise<{ ok: boolean; fil
       },
     })
     if (!res.ok) {
-      return { ok: false, error: `鍒楀嚭鏂囦欢澶辫触 (${res.status})` }
+      return { ok: false, error: `列出文件失败 (${res.status})` }
     }
     const text = await res.text()
     const parser = new DOMParser()
@@ -91,7 +91,7 @@ async function listBackupFiles(config: WebDAVConfig): Promise<{ ok: boolean; fil
     }
     return { ok: true, files }
   } catch (err: any) {
-    return { ok: false, error: err.message || "鍒楀嚭鏂囦欢澶辫触" }
+    return { ok: false, error: err.message || "列出文件失败" }
   }
 }
 
@@ -106,11 +106,11 @@ async function deleteFromWebDAV(config: WebDAVConfig, filename: string): Promise
       },
     })
     if (!res.ok) {
-      return { ok: false, error: `鍒犻櫎澶辫触 (${res.status})` }
+      return { ok: false, error: `删除失败 (${res.status})` }
     }
     return { ok: true }
   } catch (err: any) {
-    return { ok: false, error: err.message || "鍒犻櫎澶辫触" }
+    return { ok: false, error: err.message || "删除失败" }
   }
 }
 
@@ -165,7 +165,7 @@ export async function downloadLatestBackup(config: WebDAVConfig): Promise<{ ok: 
   }
   const files = listResult.files || []
   if (files.length === 0) {
-    return { ok: false, error: "杩滅▼娌℃湁澶囦唤鏂囦欢" }
+    return { ok: false, error: "远程没有备份文件" }
   }
   files.sort((a, b) => {
     const da = a.modified ? new Date(a.modified).getTime() : 0
@@ -186,7 +186,7 @@ async function downloadFromWebDAV(config: WebDAVConfig, filename: string): Promi
       },
     })
     if (res.status === 404) {
-      return { ok: false, error: "杩滅▼鏂囦欢涓嶅瓨鍦? }
+      return { ok: false, error: "远程文件不存在" }
     }
     if (!res.ok) {
       return { ok: false, error: `涓嬭浇澶辫触 (${res.status})` }
@@ -229,12 +229,12 @@ export async function importSupabaseData(userId: string, jsonStr: string): Promi
       await supabase.from(table).delete().eq("user_id", userId)
       const { error } = await supabase.from(table).insert(ownRows)
       if (error) {
-        return { ok: false, error: `${table} 鎭㈠澶辫触: ${error.message}` }
+        return { ok: false, error: `${table} 恢复失败: ${error.message}` }
       }
     }
 
     return { ok: true }
   } catch (err: any) {
-    return { ok: false, error: "鏁版嵁瑙ｆ瀽澶辫触锛? + err.message }
+    return { ok: false, error: "数据解析失败：" + err.message }
   }
 }

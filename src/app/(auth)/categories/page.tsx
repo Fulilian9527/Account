@@ -13,12 +13,12 @@ import { Label } from "@/components/ui/label"
 import { Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
-const ICONS = ["🍝", "🛒", "🚗", "🏠", "🎮", "👕", "📱", "💊", "📎", "💳", "🎀", "🧧", "🐶", "🎯", "🧵", "💰", "💈", "📝", "🧞", "⭐"]
+const ICONS = ["📄", "🛒", "🚗", "🏠", "🎮", "👕", "📱", "💊", "📎", "💳", "🎀", "🧧", "🐶", "🎯", "🧵", "💰", "💈", "📝", "🧞", "⭐"]
 
 const COLORS = ["#ef4444", "#f97316", "#eab308", "#22c55e", "#06b6d4", "#3b82f6", "#8b5cf6", "#ec4899", "#14b8a6", "#6366f1"]
 
 const DEFAULT_EXPENSE = [
-  { name: "餐饮", icon: "🍝", color: "#ef4444" },
+  { name: "餐饮", icon: "📄", color: "#ef4444" },
   { name: "购物", icon: "🛒", color: "#f97316" },
   { name: "交通", icon: "🚗", color: "#eab308" },
   { name: "居住", icon: "🏠", color: "#06b6d4" },
@@ -41,7 +41,7 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
-  const [form, setForm] = useState({ name: "", icon: "馃搫", color: "#3b82f6", type: "expense" as "income" | "expense" })
+  const [form, setForm] = useState({ name: "", icon: "📄", color: "#3b82f6", type: "expense" as "income" | "expense" })
 
   const fetchData = useCallback(async () => {
     if (!user) return
@@ -66,7 +66,7 @@ export default function CategoriesPage() {
     if (error) { toast.error("添加失败") } else {
       toast.success("添加成功")
       setShowAdd(false)
-      setForm({ name: "", icon: "馃搫", color: "#3b82f6", type: "expense" })
+      setForm({ name: "", icon: "📄", color: "#3b82f6", type: "expense" })
       fetchData()
     }
   }
@@ -87,29 +87,29 @@ export default function CategoriesPage() {
   return (
     <div className="p-4 md:p-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">鍒嗙被绠＄悊</h1>
+        <h1 className="text-2xl font-bold">分类管理</h1>
         <Dialog open={showAdd} onOpenChange={setShowAdd}>
           <DialogTrigger asChild>
-            <Button><Plus className="w-4 h-4" /> 娣诲姞鍒嗙被</Button>
+            <Button><Plus className="w-4 h-4" /> 添加分类</Button>
           </DialogTrigger>
           <DialogContent>
-            <DialogHeader><DialogTitle>娣诲姞鍒嗙被</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle>添加分类</DialogTitle></DialogHeader>
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>绫诲瀷</Label>
+                <Label>类型</Label>
                 <Tabs value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v as "income" | "expense" }))}>
                   <TabsList className="w-full">
-                    <TabsTrigger value="expense" className="flex-1">鏀嚭</TabsTrigger>
-                    <TabsTrigger value="income" className="flex-1">鏀跺叆</TabsTrigger>
+                    <TabsTrigger value="expense" className="flex-1">支出</TabsTrigger>
+                    <TabsTrigger value="income" className="flex-1">收入</TabsTrigger>
                   </TabsList>
                 </Tabs>
               </div>
               <div className="space-y-2">
-                <Label>鍚嶇О</Label>
+                <Label>名称</Label>
                 <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
               </div>
               <div className="space-y-2">
-                <Label>鍥炬爣</Label>
+                <Label>图标</Label>
                 <div className="flex flex-wrap gap-2">
                   {ICONS.map(icon => (
                     <button key={icon} type="button" onClick={() => setForm(f => ({ ...f, icon }))}
@@ -119,7 +119,7 @@ export default function CategoriesPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label>棰滆壊</Label>
+                <Label>颜色</Label>
                 <div className="flex flex-wrap gap-2">
                   {COLORS.map(color => (
                     <button key={color} type="button" onClick={() => setForm(f => ({ ...f, color }))}
@@ -131,8 +131,8 @@ export default function CategoriesPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setShowAdd(false)}>鍙栨秷</Button>
-              <Button onClick={handleAdd}>娣诲姞</Button>
+              <Button variant="outline" onClick={() => setShowAdd(false)}>取消</Button>
+              <Button onClick={handleAdd}>添加</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -140,8 +140,8 @@ export default function CategoriesPage() {
 
       <Tabs defaultValue="expense">
         <TabsList>
-          <TabsTrigger value="expense">鏀嚭鍒嗙被 ({expenseCats.length})</TabsTrigger>
-          <TabsTrigger value="income">鏀跺叆鍒嗙被 ({incomeCats.length})</TabsTrigger>
+          <TabsTrigger value="expense">支出分类</TabsTrigger>
+          <TabsTrigger value="income">收入分类</TabsTrigger>
         </TabsList>
         <TabsContent value="expense" className="grid gap-3 grid-cols-2 md:grid-cols-4">
           {expenseCats.map(c => (
